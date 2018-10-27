@@ -32,6 +32,9 @@ var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var concat = require('gulp-concat');
 
+var server = require('gulp-server-livereload');
+ 
+
 function guidGenerator() {
     var S4 = function () {
         return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -239,7 +242,14 @@ gulp.task('build', [
     //,'image:build'
 ]);
 
-
+gulp.task('webserver', function() {
+  gulp.src('')
+    .pipe(server({
+      livereload: true,
+      directoryListing: true,
+      open: true
+    }));
+});
 gulp.task('watch', function () {
     watch(path.watch.js, function (event, cb) {
         gulp.start('js:build');
@@ -253,4 +263,5 @@ gulp.task('watch', function () {
 });
 
 
-gulp.task('default', ['build', 'watch']);
+// gulp.task('default', ['build', 'watch']);
+gulp.task('default', ['build', 'watch','webserver']);

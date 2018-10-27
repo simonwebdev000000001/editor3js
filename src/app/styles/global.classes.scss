@@ -1,0 +1,90 @@
+@import './colors.scss';
+
+.d-flex {
+  display: flex!important;
+  align-items: center;
+  &.s-a {
+    justify-content: space-around;
+  }
+  &.s-b {
+    justify-content: space-between;
+  }
+  &.s-c {
+    justify-content: center;
+  }
+  &.f-r {
+    flex-direction: row;
+  }
+  &.f-c {
+    flex-direction: column;
+  }
+  &.a-s {
+    align-items: flex-start;
+  }
+  &.a-c {
+    align-items: center;
+  }
+}
+.disabled{
+  opacity: 0.7!important;
+  pointer-events: none;
+}
+.fullWidth{
+  width:100%;
+}
+.my-btn{
+  &.act-btn {
+    width: 134px;
+    font-size: 14px;
+    text-transform: uppercase;
+    background: white;
+    color: $blue1;
+
+    &.success {
+      background: $blue1;
+      color: white;
+    }
+
+    &.dangeour {
+      background: $red;
+      color: white;
+    }
+
+    &:hover {
+      color: white;
+      background: $blue2;
+    }
+  }
+}
+.color-red {
+  color: $red;
+}
+
+.upper-case {
+  text-transform: uppercase !important;
+}
+.py-1 {
+  padding: 10px 0;
+}
+.px-1 {
+  padding: 0 10px !important;
+}
+.my-1 {
+  margin: 10px 0 !important;
+  &.mx-1 {
+    margin: 10px !important;
+  }
+}
+.mx-1 {
+  margin: 0 10px !important;
+}
+.font-12 {
+  font-size: 12px;
+}
+
+.hidden {
+  display: none;
+} 
+.uni-btn{
+    text-transform: uppercase;
+}
