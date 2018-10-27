@@ -1,7 +1,8 @@
-import {Utils} from "../../utils.js";
-import {MEvents} from "./glEvents.js";
-import {MyGui} from "../helpers/MyGui.js";
-import {MStorage} from "../helpers/MStorage.js";
+import { Utils } from "../../utils.js";
+import { MEvents } from "./glEvents.js";
+import { MyGui } from "../helpers/MyGui.js";
+import { MStorage } from "../helpers/MStorage.js";
+import { resolve } from "path";
 
 
 /**
@@ -28,17 +29,22 @@ export class GlViewer {
         p.className = "info";
         p.innerHTML = "Hold Shift and Left Click to select the model part. <b>W</b> - translate, <b>E</b> - rotate, <b>R</b> - scale. Press <b>Q</b> to toggle world/local space";
         // container.appendChild(p);
-        if (!parentNode.parentNode)document.body.appendChild(parentNode);
+        if (!parentNode.parentNode) document.body.appendChild(parentNode);
         parentNode.appendChild(container);
         let tabSizeInfo = this.tabSizeInfo = document.createElement('div');
         tabSizeInfo.className = 'tab-size-info';
         container.appendChild(tabSizeInfo);
 
+
+
+
+
         this.categories = {};
-        this.cash = {models: {}};
+        this.cash = { models: {} };
         let isMobile = this.isMobile = this.deviceCheck();
         this.isAdmin = main.component.urlParams.mode == 'admin';
-        if (this.isAdmin)this._datGui = new MyGui(this);
+        if (this.isAdmin) this._datGui = new MyGui(this);
+        this.iterToRender = 0;
         this.initScene();
         // this.preloader = new Utils.Preloader(this);
         // this._cntxMenu = new CntxMenu(this);
@@ -72,9 +78,174 @@ export class GlViewer {
         this._events = new MEvents(this);
         // this._transformUI = new TransformControls(this);
 
-        // this.preloader.fade();
+        // this.preloader.fade(); 
+        let fileContainer = document.createElement('div');
+        fileContainer.className = "abs";
+        fileContainer.innerHTML = `
+       
+        <form action="" style="background:white">
+            <input type="file" name="myFile" accept=".stl"> 
+            <fieldset id="group1">
+                <p>Material</p>
+                <input type="radio" name="material" value="1" checked="checked" > Wireframe<br>
+                <input type="radio" name="material" value="2"> Basic<br>
+                <input type="radio" name="material" value="3"> Phong
+             </fieldset>
+             <fieldset id="group2">
+                <p>Export STL</p>
+                <button>binary</button>
+                <button>ASCII</button>
+             </fieldset>
+            
+        </form>
+        `;
+        container.appendChild(fileContainer);
+        let file = fileContainer.querySelector('input[type="file"]'),
+            radioButtons = fileContainer.querySelectorAll('input[type="radio"]'),
+            exportBtns = fileContainer.querySelectorAll('button');
+        file.addEventListener('change', function (e) {
+            let _f = e.target.files[0],
+            file = _f;//,
+            return _self.loadStlFile(URL.createObjectURL(_f));
+
+            /*fileReader = new FileReader();;
+           // _self.loadStlFile(_f);
+
+           
+            fileReader.onload = function (evt) {
+             //_self.loadStlFile(URL.createObjectURL(new Blob([evt.target.result],{type:_f.type})));
+             //_self.loadStlFile(URL.createObjectURL(new Blob([new Uint8Array(data)],{type:_f.type})));
+             };
+           // Load blob as Data URL
+            fileReader.readAsArrayBuffer(_f); */
+
+            var chunkSize = 1024 * 1024 * 30; //10MB Chunk size
+            var fileSize = file.size;
+            var currentChunk = 1;
+            var totalChunks = Math.ceil((fileSize / chunkSize), chunkSize);
+ 
+
+            (function loadChunkFile(delta=0) {  
+                chunkSize +=delta;
+                offset-=delta;
+                var offset = (currentChunk - 1) * chunkSize;
+                var currentFilePart = file.slice(offset, (offset + chunkSize)); 
+               
+                _self.loadStlFile(URL.createObjectURL(currentFilePart)).then(() => {
+                    if (currentChunk <=  totalChunks) {
+                        setTimeout(() => {
+                            currentChunk++;
+                            loadChunkFile();
+                        }, 1000)
+                    }
+
+                }).catch(()=>{
+                    currentChunk++;
+                    loadChunkFile();
+                   
+                });
+            })()
+        });
+        _self.materialType = 1;
+        _self.updateMaterials();
+        for (let i = 0; i < radioButtons.length; i++) {
+            radioButtons[i].addEventListener('click', function (e) {
+                _self.materialType = e.target.value;
+                _self.updateMaterials();
+            })
+        }
+        for (let i = 0; i < exportBtns.length; i++) {
+            exportBtns[i].addEventListener('click', function (e) {
+                e.preventDefault();
+                let exporter = new THREE.STLExporter();
+                let arg = {}, indexPfMesh = 0;
+                if (e.target.innerText == 'binary') {
+                    arg.binary = true;
+                }
+                if (_self.model.children.length > 1) {
+                    indexPfMesh = prompt(`There are several meshes in scene, please select index of mesh btw 0 and ${_self.model.children.length - 1}`, indexPfMesh);
+                    indexPfMesh = parseInt(indexPfMesh);
+                    if (isNaN(indexPfMesh) || indexPfMesh > _self.model.children.length - 1) indexPfMesh = 0;
+                }
+                let mesh = _self.model.children[indexPfMesh];
+                if (!mesh) return alert("Import some model before export !!!");
+                function save(blob, filename) {
+                    var link = document.createElement('a');
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                    document.body.removeChild(link);
+
+                }
+                function saveArrayBuffer(buffer, filename) {
+
+                    save(new Blob([buffer], { type: 'application/octet-stream' }), filename);
+
+                }
+                saveArrayBuffer(exporter.parse(_self.model.children[indexPfMesh], arg), 'mesh.stl');
+            })
+        }
+        var geometry = new THREE.BoxBufferGeometry(50, 50, 50);
+        var material = new THREE.MeshBasicMaterial({ color: '#ffffff', wireframe: true });
+
+        let mesh = new THREE.Mesh(geometry, material);
+        mesh.position.y = 25;
+        //_self.model.add(mesh);
     }
 
+    updateMaterials() {
+        this.lights.visible = false;
+        let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
+            _type = parseInt(this.materialType);
+
+        switch (_type) {
+            case 1: {
+                _m.wireframe = true;
+                break;
+            }
+            case 3: {
+                this.lights.visible = true;
+                _m = this.model._curMaterial = new THREE.MeshPhongMaterial();
+                break;
+            }
+        }
+        this.model.traverse((mesh) => {
+            if (mesh.material || mesh.type == "Mesh") {
+                mesh.material = _m;
+            }
+        });
+    }
+    loadStlFile(url) {
+        return new Promise((resolve,reject) => {
+            let self = this;
+            var loader = new THREE.STLLoader();
+            loader.load(url, function (orGeometry) {
+ 
+                let _position = orGeometry.attributes.position,
+                    MAX_AVAILABLE_IN_PART = 10000,
+                    size = _position.count,
+                    startPart = 1,
+                    countOfSplits = Math.ceil(size / MAX_AVAILABLE_IN_PART)
+                    ;
+
+                    if(self.model.children.length){
+                        let _m = self.model.children[0]; 
+                        _m.geometry = THREE.BufferGeometryUtils.mergeBufferGeometries([_m.geometry,orGeometry]);
+                    }else{
+                        var mesh = new THREE.Mesh(orGeometry, self.model._curMaterial);
+                 
+                        self.model.children=[];  
+                        self.model.add(mesh);
+                    } 
+                //alert("Loaded");
+                self.zoomCamera();
+                resolve();
+            }, (e) => { console.log(e) }, (e) => { console.log(e);reject();}, (e) => { console.log(e) });
+        })
+
+    }
     updateHDR(image) {
         if (!this.hdr) {
             var geometry = new THREE.SphereBufferGeometry(500, 60, 40);
@@ -87,33 +258,16 @@ export class GlViewer {
         if (image) {
             this.hdr.material.map = this.textureLoader.load(image);
             this.hdr.material.needsUpdate = true;
-            /* if (!(this.hdr.material instanceof  THREE.ShaderMaterial)) {
-             var loader = new THREE.RGBELoader();
-             loader.load(image, (texture, textureData)=> {
-             let materialHDR = new THREE.ShaderMaterial({
-             side: 2,
-             uniforms: {
-             tDiffuse: {value: texture},
-             exposure: {value: textureData.exposure},
-             brightMax: {value: textureData.gamma}
-             },
-             vertexShader: document.getElementById('vs-hdr').innerText,//Utils.Config.SHADERS.HDR.vert,
-             fragmentShader: document.getElementById('fs-hdr').innerText//Utils.Config.SHADERS.HDR.frgmnt
 
-             });
-             this.hdr.material = materialHDR;
-             this.hdr.material.needsUpdate = true;
-             })
-             }*/
         }
-        if (this.model.radius > 1)this.hdr.scale.set(this.model.radius, this.model.radius, this.model.radius);
+        if (this.model.radius > 1) this.hdr.scale.set(this.model.radius, this.model.radius, this.model.radius);
     }
 
     updateTabSizeInfo(size) {
-        if (this.tabSizeInfo.timeOutAct)clearTimeout(this.tabSizeInfo.timeOutAct);
+        if (this.tabSizeInfo.timeOutAct) clearTimeout(this.tabSizeInfo.timeOutAct);
         this.tabSizeInfo.innerHTML = 'approximate size in px:<br>' + size.width.toFixed(2) + " x " + size.height.toFixed(2) + " px<br>";
         this.tabSizeInfo.className = 'tab-size-info active';
-        this.tabSizeInfo.timeOutAct = setTimeout(()=> {
+        this.tabSizeInfo.timeOutAct = setTimeout(() => {
             this.tabSizeInfo.className = 'tab-size-info';
         }, 5000)
 
@@ -122,19 +276,19 @@ export class GlViewer {
     updateRender(settings) {
         let _set = settings || {};
         _set.clearColor = false;
-        _set.preserveDrawingBuffer = true;
+        // _set.preserveDrawingBuffer = true;
         //_set.physicallyCorrectLights = true;
-        if (this.gl)_set.canvas = this.gl.domElement;
+        if (this.gl) _set.canvas = this.gl.domElement;
         let renderer = this.gl = new THREE.WebGLRenderer(_set);
         renderer.toneMapping = THREE.LinearToneMapping;
-        for (let _f in _set)renderer[_f] = _set[_f];
-        renderer.shadowMap.enabled = true;//!!_set.shadows;
-        renderer.shadowMap.type = THREE.PCFShadowMap;
+        for (let _f in _set) renderer[_f] = _set[_f];
+        //renderer.shadowMap.enabled = true;//!!_set.shadows;
+        //renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.sortObjects = false;
-        renderer.gammaInput = !!_set.gammaInput;
-        renderer.gammaOutput = !!_set.gammaOutput;
-        if (_set.pixelRatio)renderer.setPixelRatio(_set.pixelRatio);
-        if (this.composer)this.composer.renderer = renderer;
+        //renderer.gammaInput = !!_set.gammaInput;
+        //renderer.gammaOutput = !!_set.gammaOutput;
+        if (_set.pixelRatio) renderer.setPixelRatio(_set.pixelRatio);
+        if (this.composer) this.composer.renderer = renderer;
     }
 
     initScene() {
@@ -142,7 +296,9 @@ export class GlViewer {
         this.model = new THREE.Object3D();
         this.model.name = 'model' + Date.now();
         this.scene.add(this.model);
-        this.updateRender({alpha: true, antialias: true, gammaInput: true, gammaOutput: true, shadows: false});
+        this.updateRender({
+            //alpha: true, antialias: true, gammaInput: true, gammaOutput: true, shadows: false
+        });
         let _dC = this.main.component.urlParams,
             renderer = this.gl;
 
@@ -153,7 +309,7 @@ export class GlViewer {
         //renderer.setDepthTest(false);
         //renderer.setClearColor(_self.clearColor = '#8e8e8e', 0);
         //renderer.gammaInput = renderer.gammaOutput = !!location.href.match('withGamma');
-        this.anisotropy = renderer.getMaxAnisotropy();
+        //this.anisotropy = renderer.getMaxAnisotropy();
         this.glcontainer.appendChild(renderer.domElement);
 
         let camera = this.camera = new THREE.PerspectiveCamera(45, this._W() / this._H, 1, 2000);
@@ -187,53 +343,54 @@ export class GlViewer {
         //controls.zoomSpeed = 0.87;
         //if (isMobile) controls.zoomSpeed = 1;
         controls.maxPolarAngle = Math.PI * 0.461;
-        controls.addEventListener('change', (e)=> {
+        controls.addEventListener('change', (e) => {
             this.refresh();
         });
         this.transformControls = new THREE.TransformControls(camera, renderer.domElement);
-        this.transformControls.addEventListener('mouseUp', ()=> {
+        this.transformControls.addEventListener('mouseUp', () => {
             this.saveJSON();
         });
+        var size = 100;
+        var divisions = 10;
 
-
-        // this.renderScene = new THREE.RenderPass(scene, camera);
-        //
-        // this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
-        // this.effectFXAA.uniforms['resolution'].value.set(1 / this._W(), 1 / this._H());
-        //
-        // this.bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(this._W(), this._H()), 1.5, 0.4, 0.85); //1.0, 9, 0.5, 512);
-        // this.bloomPass.renderToScreen = true;
-        //
-        // this.composer = new THREE.EffectComposer(renderer);
-        // this.composer.enabled = true;
-        // this.composer.setSize(this._W(), this._H());
-        // this.composer.addPass(this.renderScene);
-        // this.composer.addPass(this.effectFXAA);
-        // this.composer.addPass(this.bloomPass);
-
-//floor
-        let floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(100, 100), new THREE.MeshPhongMaterial({
-            color: 0x80ee10,
-            shininess: 100,
-            side: THREE.DoubleSide
-        }));
-        floor.castShadow = floor.recieveShadow = true;
-        floor.rotation.x = Math.PI / 2;
-        scene.add(floor);
-
+        var gridHelper = new THREE.GridHelper(size, divisions);
+        scene.add(gridHelper);
         this.addLights();
-        this.loadEnvMaps();
-        this.checkIfMapsLoaded({
-            val: 3,
-            next: (texture)=> {
-                scene.background = texture;
-            }
-        });
+        // floor.castShadow = floor.recieveShadow = true;
+        // floor.rotation.x = Math.PI / 2;
+        //scene.add(floor);
+
+
+
+    }
+
+    dataURItoBlob(dataURI) {
+        // convert base64 to raw binary data held in a string
+        // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+        var byteString = atob(dataURI.split(',')[1]);
+
+        // separate out the mime component
+        var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+        // write the bytes of the string to an ArrayBuffer
+        var ab = new ArrayBuffer(byteString.length);
+
+        // create a view into the buffer
+        var ia = new Uint8Array(ab);
+
+        // set the bytes of the buffer to the correct values
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        // write the ArrayBuffer to a blob, and you're done
+        var blob = new Blob([ab], { type: mimeString });
+        return blob;
 
     }
 
     setNewPst(nPosition, cameraRoompst) {
-        if (!nPosition)nPosition = this.scene.position;
+        if (!nPosition) nPosition = this.scene.position;
 
         //this.model.traverse((child)=>{
         //   if(child.type == this.ENTITY.Config.MODELS.TYPES.MESH){
@@ -245,7 +402,7 @@ export class GlViewer {
         this.model.position.copy(nPosition);
         let
             p1 = this.model.position.clone(),
-            p3 = this.zoomCamera(null, nPosition, null, ()=> {
+            p3 = this.zoomCamera(null, nPosition, null, () => {
             });
         if (cameraRoompst) {
             let
@@ -274,12 +431,12 @@ export class GlViewer {
     }
 
     zoomCamera(model, nPosition, _target, onFinish) {
-        if (!model && !this.model.children.length)return;
-        if (!nPosition)nPosition = this.model.position;
+        if (!model && !this.model.children.length) return;
+        if (!nPosition) nPosition = this.model.position;
         let fix = nPosition.fix;
         nPosition = new THREE.Vector3(nPosition.x, nPosition.y, nPosition.z);
         let target = nPosition.clone();
-        if (_target)target = _target;
+        if (_target) target = _target;
         let radius = this.model.radius;
         if (!radius) {
             radius = this.reCalcRadius();
@@ -304,18 +461,19 @@ export class GlViewer {
             //this.spotLight.position.y += Math.abs(this.spotLight.position.y * 1);
             //this.spotLight.lookAt(nPosition);
             this.move({
-                onStart: ()=> {
+                onStart: () => {
                     this.controls.enabled = true;
                     this.refresh();
-                }, onComplete: ()=> {
+                }, onComplete: () => {
                     this.refresh();
                     this.controls.minDistance = radius;
-                    this.controls.maxDistance = 5 * radius;
-                    //this.camera.far = this.controls.maxDistance * 2 * 100;
+                    this.controls.maxDistance = 105 * radius;
+                    this.camera.far = this.controls.maxDistance * 2 * 100;
+                    this.camera.near = this.controls.minDistance * 0.1;
                     this.camera.updateProjectionMatrix();
 
                 }, list: [{
-                    onUpdate: (delta)=> {
+                    onUpdate: (delta) => {
                         this.camera.position.lerp(newPst, delta);
                         this.camera.updateProjectionMatrix();
                         this.controls.target.lerp(target, delta);
@@ -341,11 +499,11 @@ export class GlViewer {
         let loader = this._objLoad || new THREE.OBJLoader();
         this._objLoad = loader;
         this.preloader.fade(true).onUpdatePreloaderStatus(0);
-        loader.load(urlObj, (object)=> {
+        loader.load(urlObj, (object) => {
             callback(object);
             this.model.userData.url = object.userData.url = this.products[urlObj] = object;
             this.preloader.fade().onUpdatePreloaderStatus(0);
-        }, (e)=>this.onProgress(e), (e)=> {
+        }, (e) => this.onProgress(e), (e) => {
             callback();
             this.onError(e)
         });
@@ -362,14 +520,14 @@ export class GlViewer {
                 this._objLoad = loader;
                 //loader.crossOrigin = Utils.Config.ACCES_ORIGIN.ANONYM;
                 this.preloader.fade(true).onUpdatePreloaderStatus(0);
-                loader.load(urlObj, (object)=> {
+                loader.load(urlObj, (object) => {
                     //this.model.userData.url = object.userData.url = this.products[urlObj] = object.clone();
                     object._path = urlObj;
                     callback(this._onLoadModel(object));
                     this.refresh();
                     this.preloader.fade().onUpdatePreloaderStatus(0);
                     this.zoomCamera();
-                }, (e)=>this.onProgress(e), (e)=> {
+                }, (e) => this.onProgress(e), (e) => {
                     callback();
                     this.onError(e)
                 });
@@ -386,13 +544,13 @@ export class GlViewer {
         this._objLoad = loader;
         let model = loader.parse(txt),
             childs = [];
-        model.traverse((child)=> {
+        model.traverse((child) => {
             if (child.type == 'Mesh') {
                 childs.push(child);
                 child.material = this.defMat;
             }
         });
-        childs.forEach((el)=> {
+        childs.forEach((el) => {
             this.model.add(el);
         });
         this.reCalcRadius();
@@ -414,7 +572,7 @@ export class GlViewer {
 
     _onLoadModel(object) {
 
-        if (!object || !object.children.length)return;
+        if (!object || !object.children.length) return;
         let
             params = this.options.params,
             hasToadd,
@@ -443,7 +601,7 @@ export class GlViewer {
                     );
                 } else {
                     if (this.model.userData.url && this.model.userData.url.match('barware_s11624.obj')) {
-                        this.model.children.splice(3, 4).forEach((meshes)=> {
+                        this.model.children.splice(3, 4).forEach((meshes) => {
                             commands.push(
                                 new Command(Command.REQUEST.INSTANCE.DETACH, {
                                     instance_name: meshes.userData.originName
@@ -466,7 +624,7 @@ export class GlViewer {
             bboxCenter = this.model.translateO;
 
         } else {
-            this.model.traverse((child)=> {
+            this.model.traverse((child) => {
                 if (child.type == Utils.Config.MODELS.TYPES.MESH) {
                     commands.push(
                         new Command(Command.REQUEST.INSTANCE.DETACH, {
@@ -482,7 +640,7 @@ export class GlViewer {
 
         this.checkIfMapsLoaded({
             val: 5,
-            next: (texture)=> {
+            next: (texture) => {
 
                 _material.envMap = texture;
                 _material.roughness = _material.metalness = 1.0;
@@ -499,7 +657,7 @@ export class GlViewer {
                 _material.bumpMap = _texture;
                 _material.needsUpdate = _texture.needsUpdate = true;
 
-                this.model.traverse((child)=> {
+                this.model.traverse((child) => {
 
                     if (child.material) {
                         //child.material=new THREE.MeshStandardMaterial({
@@ -519,9 +677,9 @@ export class GlViewer {
         });
 
         let _childs = [];
-        object.traverse((child)=> {
+        object.traverse((child) => {
             if (child.type == Utils.Config.MODELS.TYPES.MESH) {
-                if (!this.cash.models[object._path + child.name])this.cash.models[object._path + child.name] = child;
+                if (!this.cash.models[object._path + child.name]) this.cash.models[object._path + child.name] = child;
                 //child.geometry.translate(bboxCenter.x, bboxCenter.y, bboxCenter.z);
                 if (!child.userData.originName) child.userData.originName = child.name;
                 if (!child.userData.originParent) child.userData.originParent = object._path;
@@ -553,18 +711,18 @@ export class GlViewer {
                         child.rotation.z = THREE.Math.degToRad(params.rotation.z);
                     }
                     child.params = params;
-                    if (!params.listParts)params.listParts = [];
+                    if (!params.listParts) params.listParts = [];
                     params.listParts.push(child);
 
                 } else {
                     child.position.set(bboxCenter.x * difference, bboxCenter.y * difference, bboxCenter.z * difference);
                     child.scale.multiplyScalar(difference);
                 }
-                if (_componet)_componet.showGlyphicon[key] = true;
+                if (_componet) _componet.showGlyphicon[key] = true;
             }
         });
         this.transformControls.detach();
-        _childs.forEach((el)=> {
+        _childs.forEach((el) => {
 
             //if (params && el.canTransform) {
             //    this.scene.remove(this.transformControls);
@@ -589,8 +747,8 @@ export class GlViewer {
         this.exporter = exporter;
 
         let _form = new FormData(),
-            blob1 = new Blob([result.obj], {type: type}),
-            blob2 = new Blob([result.mtl], {type: type});
+            blob1 = new Blob([result.obj], { type: type }),
+            blob2 = new Blob([result.mtl], { type: type });
         _form.append('models[]', blob1, 'model.obj');
         _form.append('models[]', blob2, 'model.mtl');
         for (let i = 0; i < result.images.length; i++) {
@@ -598,7 +756,7 @@ export class GlViewer {
             _form.append('maps[]', this._b64toBlob(_img.img, 'image/*'), _img.name);
         }
 
-        return {form: _form, result: result};
+        return { form: _form, result: result };
     }
 
     _b64toBlob(b64Data, contentType, sliceSize, onEnd) {
@@ -632,7 +790,7 @@ export class GlViewer {
             byteArrays.push(byteArray);
         }
 
-        var blob = new Blob(byteArrays, {type: contentType});
+        var blob = new Blob(byteArrays, { type: contentType });
         return blob;
     }
 
@@ -640,7 +798,7 @@ export class GlViewer {
         let commands = [],
             curStorage = onlyInner ? this.innerModel : this.model;
         if (curStorage) {
-            curStorage.traverse((child)=> {
+            curStorage.traverse((child) => {
                 if (child.type == Utils.Config.MODELS.TYPES.MESH) {
                     let nName = child.name + "_clone_" + (this.loadedModels++),
                         _mat = this.main.component.commands.materials[child.userData.originName];
@@ -685,11 +843,11 @@ export class GlViewer {
                         type: '.jpg',
                         dirs: ['positiveX', 'negativeX', 'positiveY', 'negativeY', 'positiveZ', 'negativeZ']
                     },
-                    {url: 'sb_frozen/frozen_', type: '.png', dirs: ['ft', 'bk', 'up', 'dn', 'rt', 'lf']},
-                    {url: 'studiobox/', type: '.png', dirs: ['px', 'nx', 'py', 'ny', 'pz', 'nz']},
-                    {url: 'skybox/', type: '.jpg', dirs: ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']},
-                    {url: 'bridge/', type: '.jpg', dirs: ['posx', 'negx', 'posy', 'negy', 'posz', 'negz']},
-                    {url: 'pisaHDR/', type: '.hdr', dirs: ['px', 'nx', 'py', 'ny', 'pz', 'nz']}
+                    { url: 'sb_frozen/frozen_', type: '.png', dirs: ['ft', 'bk', 'up', 'dn', 'rt', 'lf'] },
+                    { url: 'studiobox/', type: '.png', dirs: ['px', 'nx', 'py', 'ny', 'pz', 'nz'] },
+                    { url: 'skybox/', type: '.jpg', dirs: ['posx', 'negx', 'posy', 'negy', 'posz', 'negz'] },
+                    { url: 'bridge/', type: '.jpg', dirs: ['posx', 'negx', 'posy', 'negy', 'posz', 'negz'] },
+                    { url: 'pisaHDR/', type: '.hdr', dirs: ['px', 'nx', 'py', 'ny', 'pz', 'nz'] }
                 ];
         textureLoader.crossOrigin = Utils.Config.ACCES_ORIGIN.ANONYM;
         textureLoader.setCrossOrigin(Utils.Config.ACCES_ORIGIN.ANONYM);
@@ -718,8 +876,8 @@ export class GlViewer {
     checkIfMapsLoaded(opt) {
         let val = opt.val,
             curMap = this.envMaps[val],
-            next = (text)=> {
-                if (opt.next)opt.next(text);
+            next = (text) => {
+                if (opt.next) opt.next(text);
             };
         if (!curMap.maps) {
             if (curMap.type == '.hdr') {
@@ -760,7 +918,7 @@ export class GlViewer {
     addLights() {
         /*-------lights--------*/
         this.lights = new THREE.Object3D();
-
+        this.lights.visible = false;
         this.scene.add(this.lights);
 
         this.changes = [
@@ -769,28 +927,30 @@ export class GlViewer {
         ]
         try {
             let data = MStorage.getItem('data');
-            if (data) {
+            if (data && false) {
 
                 for (let i = 0; i < data.lights.length; i++) {
                     let _l = data.lights[i],
                         _el = this.createLight(_l.category, _l);
-                    if (this._datGui)this._datGui.addlight(_el);
+                    if (this._datGui) this._datGui.addlight(_el);
                 }
 
                 for (let i = 0; i < data.shapes.length; i++) {
                     let _l = data.shapes[i],
                         _el = this.createShape(_l.category, _l);
-                    if (this._datGui)this._datGui.addShape(_el);
+                    if (this._datGui) this._datGui.addShape(_el);
                 }
-            }else{
-                let _el = this.createLight(5);
-                if (this._datGui)this._datGui.addlight(_el);
+            } else {
+                let _el = this.createLight(1);
+                this.createLight(4);
+                if (this._datGui) this._datGui.addlight(_el);
             }
         } catch (e) {
-            let _el = this.createLight(5);
-            if (this._datGui)this._datGui.addlight(_el);
+            let _el = this.createLight(1);
+            this.createLight(4);
+            if (this._datGui) this._datGui.addlight(_el);
         } finally {
-            if (this.main.options.helper)this.scene.add(new THREE.AxisHelper(500));
+            if (this.main.options.helper) this.scene.add(new THREE.AxisHelper(500));
         }
 
 
@@ -799,12 +959,12 @@ export class GlViewer {
     saveJSON() {
         let _g = this.changes[0],
             _l = this.changes[1],
-            result = {lights: [], shapes: []};
-        this.lights.traverse((child)=> {
+            result = { lights: [], shapes: [] };
+        this.lights.traverse((child) => {
             if (child instanceof THREE.Light) {
                 let _light = {};
                 for (let i = 0; i < _g.length; i++) {
-                    if (child[_g[i]] !== undefined)_light[_g[i]] = child[_g[i]];
+                    if (child[_g[i]] !== undefined) _light[_g[i]] = child[_g[i]];
                 }
                 for (let i = 0; i < _l.length; i++) {
                     let _cur = _l[i];
@@ -820,11 +980,11 @@ export class GlViewer {
                 result.lights.push(_light)
             }
         });
-        this.model.traverse((child)=> {
+        this.model.traverse((child) => {
             if (child.MODE == 1) {
                 let _shape = {};
                 for (let i = 0; i < _g.length; i++) {
-                    if (child[_g[i]] !== undefined)_shape[_g[i]] = child[_g[i]];
+                    if (child[_g[i]] !== undefined) _shape[_g[i]] = child[_g[i]];
                 }
                 result.shapes.push(_shape)
             }
@@ -837,59 +997,59 @@ export class GlViewer {
         let light, helper;
         switch (+category) {
             case 1:
-            {
-                light = new THREE.AmbientLight(0xffffff, 0.81);
-                break;
-            }
+                {
+                    light = new THREE.AmbientLight(0xffffff, 0.81);
+                    break;
+                }
             case 2:
-            {
-                light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.09);
-                helper = new THREE.HemisphereLightHelper(light, 5);
-                light.position.set(0, 100, 0);
-                break;
-            }
+                {
+                    light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.09);
+                    helper = new THREE.HemisphereLightHelper(light, 5);
+                    light.position.set(0, 100, 0);
+                    break;
+                }
             case 3:
-            {
-                light = new THREE.SpotLight(0xffffff, 0.141);
-                light.position.set(5, 5, 5);
-                light.shadow.mapSize.width = 1024;
-                light.shadow.mapSize.height = 1024;
-                light.shadow.camera.near = 1;
-                light.shadow.camera.far = this.camera.far;
-                light.angle = 0.5;//Math.PI / 2;
-                light.penumbra = 0.05;
-                light.decay = 2;
-                light.distance = this.camera.far;
-                light.castShadow = true;
-                light.shadow.mapSize.width = 1024;
-                light.shadow.mapSize.height = 1024;
-                light.shadow.camera.near = 10;
-                light.shadow.camera.far = this.camera.far;
-                helper = new THREE.SpotLightHelper(light);
-                break;
-            }
+                {
+                    light = new THREE.SpotLight(0xffffff, 0.141);
+                    light.position.set(5, 5, 5);
+                    light.shadow.mapSize.width = 1024;
+                    light.shadow.mapSize.height = 1024;
+                    light.shadow.camera.near = 1;
+                    light.shadow.camera.far = this.camera.far;
+                    light.angle = 0.5;//Math.PI / 2;
+                    light.penumbra = 0.05;
+                    light.decay = 2;
+                    light.distance = this.camera.far;
+                    light.castShadow = true;
+                    light.shadow.mapSize.width = 1024;
+                    light.shadow.mapSize.height = 1024;
+                    light.shadow.camera.near = 10;
+                    light.shadow.camera.far = this.camera.far;
+                    helper = new THREE.SpotLightHelper(light);
+                    break;
+                }
             case 4:
-            {
-                light = new THREE.DirectionalLight(0xffffff, 0.15);
-                light.position.set(5, 5, 5);
-                light.shadow.mapSize.width = 1024;
-                light.shadow.mapSize.height = 1024;
-                light.shadow.camera.near = 1;
-                light.shadow.camera.far = this.camera.far;
-                helper = new THREE.DirectionalLightHelper(light, 5);
-                break;
-            }
+                {
+                    light = new THREE.DirectionalLight(0xffffff, 0.15);
+                    light.position.set(5, 5, 5);
+                    light.shadow.mapSize.width = 1024;
+                    light.shadow.mapSize.height = 1024;
+                    light.shadow.camera.near = 1;
+                    light.shadow.camera.far = this.camera.far;
+                    helper = new THREE.DirectionalLightHelper(light, 5);
+                    break;
+                }
             case 5:
-            {
-                light = new THREE.PointLight(0xffffff, 2, 1024);
-                light.position.set(0, 5, 0);
-                helper = new THREE.PointLightHelper(light, 1);
-                break;
-            }
+                {
+                    light = new THREE.PointLight(0xffffff, 2, 1024);
+                    light.position.set(0, 5, 0);
+                    helper = new THREE.PointLightHelper(light, 1);
+                    break;
+                }
             default:
-            {
-                return;
-            }
+                {
+                    return;
+                }
         }
         if (light) {
             light.castShadow = true;
@@ -907,12 +1067,12 @@ export class GlViewer {
                 let _gL = this.changes[1];
                 for (let i = 0; i < _g.length - 1; i++) {
                     let _l = _g[i];
-                    for (let f in settings[_l])light[_l][f] = settings[_l][f];
+                    for (let f in settings[_l]) light[_l][f] = settings[_l][f];
                 }
 
                 for (let i = 0; i < _gL.length; i++) {
                     let _l = _gL[i];
-                    if (settings[_l] == undefined)continue;
+                    if (settings[_l] == undefined) continue;
                     if (_l.toLowerCase().match('color')) {
                         light[_l].setHex('0x' + settings[_l].substr(1));
                     } else {
@@ -929,15 +1089,15 @@ export class GlViewer {
         let shape;
         switch (+category) {
             case 1:
-            {
-                shape = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial());
-                break;
-            }
+                {
+                    shape = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial());
+                    break;
+                }
 
             default:
-            {
-                return;
-            }
+                {
+                    return;
+                }
         }
         if (shape) {
             shape.castShadow = true;
@@ -948,7 +1108,7 @@ export class GlViewer {
                 let _g = this.changes[0];
                 for (let i = 0; i < _g.length - 1; i++) {
                     let _l = _g[i];
-                    for (let f in settings[_l])shape[_l][f] = settings[_l][f];
+                    for (let f in settings[_l]) shape[_l][f] = settings[_l][f];
                 }
             }
         }
@@ -966,7 +1126,7 @@ export class GlViewer {
     }
 
     refresh() {
-        if (this._animation)this._animation.play(true);
+        if (this._animation) this._animation.play(true);
     }
 
     /**
@@ -990,10 +1150,10 @@ export class GlViewer {
 
 
         center.y = point.y;
-        RayCast.setFromCamera({x: 0, y: 0}, this.camera);
-        newAngle = this.toV2({x: 0, y: 0}, {x: RayCast.ray.direction.x, y: RayCast.ray.direction.z});
-        curentRotationInRad = ( ( -Math.PI / 2 + -newAngle ) + (Math.PI * 2) ) % ( Math.PI * 2 );
-        nRotation = ( curentRotationInRad + ((Math.PI / 180) * rotation)  );
+        RayCast.setFromCamera({ x: 0, y: 0 }, this.camera);
+        newAngle = this.toV2({ x: 0, y: 0 }, { x: RayCast.ray.direction.x, y: RayCast.ray.direction.z });
+        curentRotationInRad = ((-Math.PI / 2 + -newAngle) + (Math.PI * 2)) % (Math.PI * 2);
+        nRotation = (curentRotationInRad + ((Math.PI / 180) * rotation));
         _X = center.x + radius * Math.sin(nRotation);
         _Z = center.z + radius * Math.cos(nRotation);
         return new THREE.Vector3(_X, point.y, _Z);
@@ -1015,14 +1175,14 @@ export class GlViewer {
         let _self = this,
             mtlLoader = _self.mtlLoader,
             objLoader = _self.objLoader,
-            onFinishE = (d)=> {
+            onFinishE = (d) => {
 
                 onFinish(d);
                 //this.controls.enabled = true;
                 //if(_self.animation)_self.animation.play();
-            }, onErrorE = (xhr)=> {
+            }, onErrorE = (xhr) => {
 
-                if (onError)onError(xhr);
+                if (onError) onError(xhr);
                 _self.onError(xhr);
                 //this.controls.enabled = true;
                 //if(_self.animation)_self.animation.play();
@@ -1030,7 +1190,7 @@ export class GlViewer {
 
         //this.controls.enabled = false;
         //if(_self.animation)_self.animation.stop();
-        if (!objLoader.iter)objLoader.iter = 0;
+        if (!objLoader.iter) objLoader.iter = 0;
         objLoader.iter++;
         this.model_name = model_name;
         this.totalLoaded = this.curLoadedItems / this.maxLoadedItems;
@@ -1041,17 +1201,17 @@ export class GlViewer {
                 materials.preload();
                 objLoader.setMaterials(materials);
                 objLoader.setPath(_self.model_path);
-                objLoader.load(model_name + 'obj', (e)=> {
-                    _self.onProgress({loaded: 1, total: 1});
-                    onFinishE(e), (xhr)=>_self.onProgress(xhr), onErrorE
+                objLoader.load(model_name + 'obj', (e) => {
+                    _self.onProgress({ loaded: 1, total: 1 });
+                    onFinishE(e), (xhr) => _self.onProgress(xhr), onErrorE
                 });
             });
         } else {
             objLoader.setPath(_self.model_path);
-            objLoader.load(model_name + 'obj', (e)=> {
-                _self.onProgress({loaded: 1, total: 1});
-                onFinishE(e), (xhr)=>_self.onProgress(xhr), onErrorE
-            }, (xhr)=> {
+            objLoader.load(model_name + 'obj', (e) => {
+                _self.onProgress({ loaded: 1, total: 1 });
+                onFinishE(e), (xhr) => _self.onProgress(xhr), onErrorE
+            }, (xhr) => {
                 _self.onProgress(xhr);
             }, onErrorE);
         }
@@ -1063,7 +1223,7 @@ export class GlViewer {
     }
 
     toggleBtns(flag = false) {
-        [].forEach.call(document.querySelector('.m-footer>.controls').childNodes, (node, item)=> {
+        [].forEach.call(document.querySelector('.m-footer>.controls').childNodes, (node, item) => {
             if (node.getAttribute) {
                 if (node.getAttribute(this.events.ATTRIBUTES.ONLY_EXTERIER)) {
                     node.style.display = flag ? '' : 'none';
@@ -1085,14 +1245,14 @@ export class GlViewer {
     move(arg) {
         let _self = this,
             controls = this.controls;
-        if (!this.move.isFinish)return;
+        if (!this.move.isFinish) return;
         this.refresh();
         let duration = arg.duration || 900,
-            tween = new TWEEN.Tween({delta: 0}).to({delta: 1}, duration)
+            tween = new TWEEN.Tween({ delta: 0 }).to({ delta: 1 }, duration)
                 .easing(TWEEN.Easing.Exponential.In)
-                .onStart(()=> {
+                .onStart(() => {
                     controls.enabled = this.move.isFinish = /*this.personControls.enabled = */false;
-                    if (arg.onStart)arg.onStart();
+                    if (arg.onStart) arg.onStart();
                 })
                 .onUpdate(function (delta) {
                     for (let i = 0, list = arg.list || arg; i < list.length; i++) {
@@ -1103,7 +1263,7 @@ export class GlViewer {
                     this.move.isFinish = controls.enabled = true;
                     tween.stop();
                     tween = null;
-                    if (arg.onComplete)arg.onComplete();
+                    if (arg.onComplete) arg.onComplete();
                 })
                 .start()
             ;
@@ -1145,7 +1305,7 @@ export class GlViewer {
 
 
             if (isnotFlat) {
-                if (this.controls.lastMinDistance)this.controls.minDistance = this.controls.lastMinDistance;
+                if (this.controls.lastMinDistance) this.controls.minDistance = this.controls.lastMinDistance;
                 _cntls.target.copy(this.scene.position);
 
                 let dir = new THREE.Vector3().subVectors(_cntls.target.clone(), controlObj.position.clone()).normalize(),
@@ -1196,7 +1356,7 @@ export class GlViewer {
         let removeMeshes = [];
         this.transformControls.detach();
         this.scene.remove(this.transformControls);
-        this.model.traverse((mesh)=> {
+        this.model.traverse((mesh) => {
             if (mesh.type == Utils.Config.MODELS.TYPES.MESH) {
                 removeMeshes.push(mesh);
             }
@@ -1246,13 +1406,18 @@ export class Animation {
 
     animate() {
         //this.stats.begin();
-        for (let i = 0; i < this.animations.length; i++) {
+        /* for (let i = 0; i < this.animations.length; i++) {
             this.animations[i]();
         }
-        if (this.canAnimate  /*&& (!this.main.isMobile || ( this.main.isMobile && this.lastIter++ > 2))*/) {
-
+       if (this.canAnimate  ) {
+ 
             this.canAnimate = this.lastUpdate > Date.now();
-            if (!this.canAnimate || this.lastIter > 2)this.lastIter = 0;
+            if (!this.canAnimate || this.lastIter > 2) this.lastIter = 0;
+            
+        }*/
+
+        if (this.main.iterToRender++ % 4 == 0) {
+            this.main.iterToRender = 0;
             this.main.render();
         }
         //this.stats.end();
@@ -1262,7 +1427,7 @@ export class Animation {
     }
 
     play(flag) {
-        this.lastUpdate = Date.now() + ( this.maxTimeUpdate);
+        this.lastUpdate = Date.now() + (this.maxTimeUpdate);
         if (this.canAnimate) return;
         this.canAnimate = flag;//|| !Pace.running;
     }
