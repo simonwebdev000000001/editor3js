@@ -22,22 +22,32 @@ export default class GlUi {
                 <fieldset id="group1">
                     <h3>Controls Settings</h3>
                     <div class="d-flex s-b ">
+                        <span>Step increments(mm),only for Keyboard</span>
+                        <input type="number" min="0" step="0.5" data-controls="increments-keyboard_translate" value="${GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE}"/>
+                    </div>
+                    <div class="d-flex s-b ">
                         <span>Increments Translate(mm)</span>
-                        <input type="number" min="0" data-controls="increments-translate" value="0"/>
+                        <input type="number" min="0" step="0.5" data-controls="increments-translate" value="${GUtils.CONTROLS.INCREMENTS.TRANSLATE}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>Increments Rotating(deg)</span>
-                        <input type="number" min="0" data-controls="increments-rotate" value="0"/>
+                        <input type="number" min="0" step="0.5" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
                     </div>
                 </fieldset> 
                 <fieldset id="group1">
                     <h3>Controls Help</h3>
-                    <p>
-                        Hold "Shift" and click on model part to add to transform
+                    <ul>
+                        <li>Click on model to add to transform, second time clicking on same model will 
+                        remove it from transform, click somewhere on scen will deselect all</li>
+                        <li>Arrows Left and Right translate on X, Top and Down translate on Z, 
+                        Holding Shift and Left or Right translate on Y </li>
+                        <li>
+                           
                         "W" translate | "E" rotate | "R" scale | "+" increase size | "-" decrease size
                         "Q" toggle world/local space | Hold "Ctrl" down to snap to grid
                         "X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled
-                    </p>
+                        </li>
+                    </ul> 
                 </fieldset> 
                 <fieldset id="group1">
                     <p>Material</p>
@@ -154,7 +164,7 @@ export default class GlUi {
                 _input.addEventListener('change', function (e) {
                     let dataSet = e.target.dataset,
                         key = Object.keys(dataSet)[0],
-                        val = e.target.value; 
+                        val = e.target.value;
 
                     switch (key) {
                         case 'chamber': {
@@ -181,6 +191,9 @@ export default class GlUi {
                                     }
 
                                     break;
+                                }
+                                case 'increments-keyboard_translate': {
+                                    GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE = parseFloat(val);
                                 }
                             }
 

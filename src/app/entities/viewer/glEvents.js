@@ -1,5 +1,6 @@
 import { GlViewer } from "./glViewer.js";
 import { GLMain } from "./glMain.js";
+import GUtils from "../utils";
 /**
  * @class events for canvas viewver and some events for buttons
  * */
@@ -77,9 +78,13 @@ export class MEvents extends GLMain {
     onKeyUp(event) {
         let _self = this,
             main = this.main,
-            control = main.transformControls;
-        _self.keyCode = [];
-        switch (event.keyCode) {
+            control = main.transformControls,
+            keyCode = event.keyCode,
+            keyIndex = _self.keyCode.indexOf(keyCode);
+
+        if (keyIndex > -1) _self.keyCode.splice(keyIndex, 1);
+        // _self.keyCode = []; 
+        switch (keyCode) {
             case 17: {
                 if (control) {
                     // control.setTranslationSnap(null);
@@ -101,9 +106,59 @@ export class MEvents extends GLMain {
 
         let _self = this,
             main = this.main,
-            control = main.transformControls;
-        _self.keyCode.push(event.keyCode);
+            control = main.transformControls,
+            keyCode = event.keyCode;
+        if (_self.keyCode.indexOf(keyCode) < 0) _self.keyCode.push(event.keyCode);
+        // console.log(event.keyCode);
+
+        if (_self.keyCode.indexOf(16) > -1) {
+            switch (keyCode) {
+                case 37: {//Left
+                    if (control && control.tempParent) {
+                        control.tempParent.position.y += GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                        return this.Utils.Config.onEventPrevent(event, true);
+                    }
+                    break;
+                }
+                case 39: {//Top
+                    if (control && control.tempParent) {
+                        control.tempParent.position.y -= GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                        return this.Utils.Config.onEventPrevent(event, true);
+                    }
+                    break;
+                }
+            }
+        }
         switch (event.keyCode) {
+
+            case 37: {//Left 
+                if (control && control.tempParent) {
+                    control.tempParent.position.x -= GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                    return this.Utils.Config.onEventPrevent(event, true);
+                }
+                break;
+            }
+            case 38: {//Top
+                if (control && control.tempParent) {
+                    control.tempParent.position.z += GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                    return this.Utils.Config.onEventPrevent(event, true);
+                }
+                break;
+            }
+            case 39: {//Right
+                if (control && control.tempParent) {
+                    control.tempParent.position.x += GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                    return this.Utils.Config.onEventPrevent(event, true);
+                }
+                break;
+            }
+            case 40: {//Down
+                if (control && control.tempParent) {
+                    control.tempParent.position.z -= GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
+                    return this.Utils.Config.onEventPrevent(event, true);
+                }
+                break;
+            }
             case 27:
                 {
                     if (main.transformControls.object) {
@@ -130,6 +185,10 @@ export class MEvents extends GLMain {
                 }
 
                 break;
+            case 18: {//Alt
+
+                break;
+            }
 
             case 87: // W
                 if (main.transformControls) main.transformControls.setMode("translate");
@@ -238,40 +297,74 @@ export class MEvents extends GLMain {
 
         } else {
 
-            this.onTransformModel();
+
         }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
-
+                let object,
+                    parent,
+                    shouldKeepleftitems = false,
+                    transformControls = this.main.transformControls;
                 if (intersects.length) {
-                    let _obj = (intersects[0]);
-                    this.onTransformModel(_obj.object);
+                    object = (intersects[0]).object;
+                    parent = object.parent;
+                }
+                if (object && transformControls.tempParent) {
+                    for (let i = 0; i < transformControls.tempParent.children.length; i++) {
+                        let child = transformControls.tempParent.children[i];
+                        if (child.uuid == object.uuid) {
+                            this.deselectFromControls(object);
+                            object = null;
+                            shouldKeepleftitems = true;
+                            let items = transformControls.tempParent.children.map((el) => el);
+                            if (items.length > 1) {
+                                this.onTransformModel();
+                                return items.forEach((_child) => {
+                                    if (_child.isIntersectable) {
+                                        this.onTransformModel(_child);
+                                    }
+
+                                })
+                            }
+                            break;
+                        }
+                    }
                 }
 
+                this.onTransformModel(object);
             });
         }
     }
 
-    onTransformModel(object) {
-        let transformControls = this.main.transformControls,
-            listOfmodels = [];
+    deselectFromControls(child) {
+        child.parent.updateMatrixWorld();
+        child._orParent.updateMatrixWorld();
+        child.updateMatrixWorld();
+        child.material = child._material;
+        THREE.SceneUtils.detach(child, child.parent, child._orParent);
+    }
+    onTransformModel(object, shouldKeepleftitems, _parent) {
+        let main = this.main,
+            transformControls = main.transformControls,
+            listOfmodels = [],
+            parent = _parent;
         transformControls.detach();
         this.main.scene.remove(transformControls);
         // if (transformControls.lastSelected && transformControls.lastSelected._box) {
         //     transformControls.lastSelected._box.parent.remove(transformControls.lastSelected._box);
         // }
+
+
         transformControls.lastSelected = object;
         if (transformControls.tempParent) {
+            transformControls.tempParent.updateMatrixWorld();
             for (let i = 0, list = transformControls.tempParent.children; i < list.length; i++) {
                 let child = list[i];
                 if (child.isIntersectable) {
                     i--;
                     listOfmodels.push(child);
-                    child._orParent.add(child);
-                    child.position.add(transformControls.tempParent.position);
-                    child.quaternion.multiply(transformControls.tempParent.quaternion);
-                    child.scale.multiply(transformControls.tempParent.scale);
-
+                    this.deselectFromControls(child);
+                    parent = child.parent;
                 }
             }
             transformControls.tempParent.parent.remove(transformControls.tempParent);
@@ -280,9 +373,16 @@ export class MEvents extends GLMain {
         if (!object) {
             return;
         }
-        listOfmodels.push(object);
+        if (object) {
+            listOfmodels.push(object);
 
-        if (!object._orParent) object._orParent = object.parent;
+            if (!object._orParent) {
+                object._orParent = object.parent;
+                object._material = object.material;
+            }
+        }
+
+
         // (new THREE.Matrix4()).decompose(object._box.position,object._box.quaternion,object._box.scale);
 
         // object._box.position.copy(new THREE.Vector3());
@@ -291,6 +391,7 @@ export class MEvents extends GLMain {
 
 
 
+        let tempStore = new THREE.Object3D();
         if (!transformControls.tempParent) {
             transformControls.tempParent = new THREE.Object3D();
             transformControls.tempParent.isNew = true;
@@ -299,15 +400,25 @@ export class MEvents extends GLMain {
         }
 
         listOfmodels.forEach((el) => {
-            transformControls.tempParent.add(el);
+            tempStore.add(el);
         })
 
         if (transformControls.tempParent._box) transformControls.tempParent._box.parent.remove(transformControls.tempParent._box);
-        transformControls.tempParent._box = new THREE.BoxHelper(transformControls.tempParent, 0x00ff00);
+        transformControls.tempParent._box = new THREE.BoxHelper(tempStore, '#768492');
 
-        transformControls.tempParent.add(transformControls.tempParent._box);
+
+        let items = [transformControls.tempParent._box, ...listOfmodels];
+        transformControls.tempParent.position.copy(transformControls.tempParent._box.geometry.boundingSphere.center);
+
+
+        transformControls.tempParent.updateMatrixWorld();
+        items.forEach((el) => {
+            el.updateMatrixWorld();
+            el.material = main.model._selectedMaterial;
+            THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
+        });
+
         transformControls.attach(transformControls.tempParent);
-
         this.main.scene.add(transformControls);
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;

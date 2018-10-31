@@ -7,9 +7,17 @@ export default class GUtils {
         CONTAINER_APP_ID: 'WEBGLVIEW',
         MAX_TOTAL_FILE_SIZE: 1024 * 1000 * 1000 * 10,//1024 -1 kb, 1024*1000 1bm,
         MAX_SINGE_FILE_SIZE: 1024 * 1000 * 1000 * 2,
-        MAX_FILE_ITEMS_COUNT: 1000
+        MAX_FILE_ITEMS_COUNT: 1000,
+        SELECTED_COLOR:new THREE.Color(135/255,  210/255, 221/255)
     }
 
+    static CONTROLS = {
+        INCREMENTS: {
+            TRANSLATE: 1,
+            ROTATE: 1,
+            KEYBOARD_TRANSLATE:10
+        }
+    }
     static CHAMPER = {
         WIDTH: 100,//x
         HEIGHT: 100,//y

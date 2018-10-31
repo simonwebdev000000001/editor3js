@@ -72,6 +72,7 @@ export class GlViewer {
         let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
             _type = parseInt(this.materialType);
 
+            this.model._selectedMaterial = new THREE.MeshPhongMaterial({color:'#87d2dd'});
         switch (_type) {
             case 1: {
                 _m.wireframe = true;
@@ -165,12 +166,14 @@ export class GlViewer {
     updateRender(settings) {
         let _set = settings || {};
         _set.clearColor = false;
+        _set.antialias  = true;
         // _set.preserveDrawingBuffer = true;
         //_set.physicallyCorrectLights = true;
         if (this.gl) _set.canvas = this.gl.domElement;
         let renderer = this.gl = new THREE.WebGLRenderer(_set);
         renderer.toneMapping = THREE.LinearToneMapping;
         for (let _f in _set) renderer[_f] = _set[_f];
+        renderer.setClearColor('#e0e0e6',1);
         //renderer.shadowMap.enabled = true;//!!_set.shadows;
         //renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.sortObjects = false;
@@ -228,6 +231,7 @@ export class GlViewer {
         controls.rotateSpeedUP = 0.06493;
         //controls.zoomSpeed = 0.87;
         //if (isMobile) controls.zoomSpeed = 1;
+        controls.enableKeys=false
         controls.maxPolarAngle = Math.PI * 0.461;
         controls.addEventListener('change', (e) => {
             this.refresh();
@@ -264,11 +268,11 @@ export class GlViewer {
             GUtils.CHAMPER.DEPTH
         ));
         box.position.y = GUtils.CHAMPER.HEIGHT / 2;
-        this.chamber = new THREE.BoxHelper(box, 0xffffff);
+        this.chamber = new THREE.BoxHelper(box, '#6d7c8b');
 
         let size = 100,
             divisions = 10,
-            gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions);
+            gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions,0x444444,'#6d7c8b');
 
         gridHelper.scale.x = GUtils.CHAMPER.WIDTH / size;
         gridHelper.scale.z = GUtils.CHAMPER.DEPTH / size;
