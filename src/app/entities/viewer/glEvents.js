@@ -1,6 +1,9 @@
 import { GlViewer } from "./glViewer.js";
 import { GLMain } from "./glMain.js";
 import GUtils from "../utils";
+
+
+import BoxControls from './controls/box';
 /**
  * @class events for canvas viewver and some events for buttons
  * */
@@ -283,9 +286,106 @@ export class MEvents extends GLMain {
         });
     }
 
+
+
+    deselectFromControls(child) {
+        child.parent.updateMatrixWorld();
+        child._orParent.updateMatrixWorld();
+        child.updateMatrixWorld();
+        child.material = child._material;
+        THREE.SceneUtils.detach(child, child.parent, child._orParent);
+    }
+    onTransformModel(object, shouldKeepleftitems, _parent) {
+        let main = this.main,
+            transformControls = main.transformControls,
+            listOfmodels = [],
+            parent = _parent;
+        transformControls.detach();
+        this.main.scene.remove(transformControls);
+        // if (transformControls.lastSelected && transformControls.lastSelected._box) {
+        //     transformControls.lastSelected._box.parent.remove(transformControls.lastSelected._box);
+        // }
+
+
+        transformControls.lastSelected = object;
+        if (transformControls.tempParent) {
+            transformControls.tempParent.updateMatrixWorld();
+            for (let i = 0, list = transformControls.tempParent.children; i < list.length; i++) {
+                let child = list[i];
+                if (child.isIntersectable) {
+                    i--;
+                    listOfmodels.push(child);
+                    this.deselectFromControls(child);
+                    parent = child.parent;
+                }
+            }
+            transformControls.tempParent.parent.remove(transformControls.tempParent);
+            transformControls.tempParent = null;
+        }
+        if (!object) {
+            return;
+        }
+        if (object) {
+            listOfmodels.push(object);
+
+            if (!object._orParent) {
+                object._orParent = object.parent;
+                object._material = object.material;
+            }
+        }
+
+
+
+
+
+        let tempStore = new THREE.Object3D();
+        if (!transformControls.tempParent) {
+            transformControls.tempParent = new THREE.Object3D();
+            transformControls.tempParent.isNew = true;
+            object.parent.add(transformControls.tempParent);
+
+        }
+
+        listOfmodels.forEach((el) => {
+            tempStore.add(el);
+        })
+
+        if (transformControls.tempParent._box) transformControls.tempParent._box.remove();
+        transformControls.tempParent._box = new BoxControls({ tempStore, viewer: this.main });
+
+
+        let items = [transformControls.tempParent._box.controls, ...listOfmodels];
+        transformControls.tempParent.position.copy(
+            transformControls.tempParent._box.controls.geometry.boundingSphere.center
+        );
+
+
+        transformControls.tempParent.updateMatrixWorld();
+        items.forEach((el) => {
+            el.updateMatrixWorld();
+            el.material = main.model._selectedMaterial;
+            THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
+        });
+
+        transformControls.attach(transformControls.tempParent);
+        this.main.scene.add(transformControls);
+        transformControls.traverse((ch) => {
+            if (ch.type == "Mesh") transformControls.renderOrder = 1;
+        })
+    }
     onMouseUp(ev, acc) {
+        this.main.controls.enabled = true;
+        document.body.style.cursor = '';
+        if (this._lastSelectedMesh) {
+            switch (this._lastSelectedMesh._category) {
+                case 2: {
+                    this._lastSelectedMesh._mouseup(ev);
+                    break;
+                }
+            }
+        }
         this.Utils.Config.onEventPrevent(ev);
-        this.mouse.down = this.lastSelectedMesh = null;
+        this.mouse.down = this.lastSelectedMesh = this._lastSelectedMesh = null;
         this.canEdit = !this.canEdit;
         this.main.controls.enabled = true;
         this.main.refresh();
@@ -335,106 +435,81 @@ export class MEvents extends GLMain {
             });
         }
     }
-
-    deselectFromControls(child) {
-        child.parent.updateMatrixWorld();
-        child._orParent.updateMatrixWorld();
-        child.updateMatrixWorld();
-        child.material = child._material;
-        THREE.SceneUtils.detach(child, child.parent, child._orParent);
-    }
-    onTransformModel(object, shouldKeepleftitems, _parent) {
-        let main = this.main,
-            transformControls = main.transformControls,
-            listOfmodels = [],
-            parent = _parent;
-        transformControls.detach();
-        this.main.scene.remove(transformControls);
-        // if (transformControls.lastSelected && transformControls.lastSelected._box) {
-        //     transformControls.lastSelected._box.parent.remove(transformControls.lastSelected._box);
-        // }
-
-
-        transformControls.lastSelected = object;
-        if (transformControls.tempParent) {
-            transformControls.tempParent.updateMatrixWorld();
-            for (let i = 0, list = transformControls.tempParent.children; i < list.length; i++) {
-                let child = list[i];
-                if (child.isIntersectable) {
-                    i--;
-                    listOfmodels.push(child);
-                    this.deselectFromControls(child);
-                    parent = child.parent;
-                }
-            }
-            transformControls.tempParent.parent.remove(transformControls.tempParent);
-            transformControls.tempParent = null;
-        }
-        if (!object) {
-            return;
-        }
-        if (object) {
-            listOfmodels.push(object);
-
-            if (!object._orParent) {
-                object._orParent = object.parent;
-                object._material = object.material;
-            }
-        }
-
-
-        // (new THREE.Matrix4()).decompose(object._box.position,object._box.quaternion,object._box.scale);
-
-        // object._box.position.copy(new THREE.Vector3());
-        // object._box.geometry.applyMatrix( object.matrix );
-        // object.matrix.getInverse(object._box.matrix);  
-
-
-
-        let tempStore = new THREE.Object3D();
-        if (!transformControls.tempParent) {
-            transformControls.tempParent = new THREE.Object3D();
-            transformControls.tempParent.isNew = true;
-            object.parent.add(transformControls.tempParent);
-
-        }
-
-        listOfmodels.forEach((el) => {
-            tempStore.add(el);
-        })
-
-        if (transformControls.tempParent._box) transformControls.tempParent._box.parent.remove(transformControls.tempParent._box);
-        transformControls.tempParent._box = new THREE.BoxHelper(tempStore, '#768492');
-
-
-        let items = [transformControls.tempParent._box, ...listOfmodels];
-        transformControls.tempParent.position.copy(transformControls.tempParent._box.geometry.boundingSphere.center);
-
-
-        transformControls.tempParent.updateMatrixWorld();
-        items.forEach((el) => {
-            el.updateMatrixWorld();
-            el.material = main.model._selectedMaterial;
-            THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
-        });
-
-        transformControls.attach(transformControls.tempParent);
-        this.main.scene.add(transformControls);
-        transformControls.traverse((ch) => {
-            if (ch.type == "Mesh") transformControls.renderOrder = 1;
-        })
-    }
-
     onMouseMove(ev) {
-        let noMouseDown = !this.mouse.down;
+        let noMouseDown = !this.mouse.down,
+            _el = this._lastSelectedMesh,
+            _elH = this.lastHovered;
         this.mouse.hasMove = !noMouseDown;
 
-        this.lastSelectedMesh = null;
+        this.lastSelectedMesh = this.lastHovered = null;
         this.main.refresh();
         if (noMouseDown) {
+            if (_elH) {
+                switch (_elH._category) {
+                    case 2: {
+                        _elH._mouseoout(ev);
+                        break;
+                    }
+                }
+            }
+
             this.onSelected(ev, (inters) => {
                 document.body.style.cursor = inters.length ? 'pointer' : '';
+
+                if (inters && inters.length) {
+                    let element = this.lastHovered = inters[0].object;
+                    switch (element._category) {
+                        case 2: {
+                            element._mouseover(ev);
+                            break;
+                        }
+                    }
+                }
+
             });
+        } else if (_el) {
+            switch (_el._category) {
+                case 2: {
+                    _el._mousemove(ev);
+                    break;
+                }
+            }
+
+        }
+    }
+
+
+    onMouseDown(ev) {
+        this.mouse.hasMove = this.keyCode.indexOf(17) > -1;
+        this.mouse.down = ev;
+        this.main.controls.autoRotate = false;
+        this.lastEv = this.lastSelectedMesh = false;
+        if (this.main.controls.enabled) {
+            this.onSelected(ev, (inters) => {
+
+                if (inters && inters.length) {
+
+                    let element = inters[0].object;
+                    this._lastSelectedMesh = element;
+                    switch (element._category) {
+                        case 2: {
+                            this.main.controls.enabled = false;
+                            this.Utils.Config.onEventPrevent(ev);
+                            element._mousedown(ev);
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    isLogoSelected(uv, ar) {
+        let decots = ar || this.main.decorations;
+        for (let i = 0, decor = decots; i < decor.length; i++) {
+            if (decor[i].isSelected(uv)) {
+                return decor[i];
+            }
         }
     }
 
@@ -451,28 +526,6 @@ export class MEvents extends GLMain {
 
         callback(intersectList);
     }
-
-    onMouseDown(ev) {
-        this.mouse.hasMove = this.keyCode.indexOf(17) > -1;
-        this.mouse.down = ev;
-        this.main.controls.autoRotate = false;
-        this.lastEv = this.lastSelectedMesh = false;
-        if (this.main.controls.enabled) {
-            // this.onSelected(ev, (inters)=> {
-            //
-            // });
-        }
-    }
-
-    isLogoSelected(uv, ar) {
-        let decots = ar || this.main.decorations;
-        for (let i = 0, decor = decots; i < decor.length; i++) {
-            if (decor[i].isSelected(uv)) {
-                return decor[i];
-            }
-        }
-    }
-
     onMouseOut(ev) {
         if (this.mouse.down) this.onMouseUp(ev);
     }

@@ -18,6 +18,9 @@ export default class GUtils {
             KEYBOARD_TRANSLATE:10
         }
     }
+    static COLORS={
+        EDGE:'#6d7c8b',
+    }
     static CHAMPER = {
         WIDTH: 100,//x
         HEIGHT: 100,//y
