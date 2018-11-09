@@ -95,8 +95,8 @@ export default class GlUi {
                     } else if (file.size >= GUtils.SETTINGS.MAX_SINGE_FILE_SIZE) {
                         haveBigFiles = true;
                         continue;
-                    }
-                    _self.loadStlFile(URL.createObjectURL(file));
+                    } 
+                    _self.loadStlFile(URL.createObjectURL(file),file.name);
                     _self.TOTAL_FILE_LOADED += file.size;
                 }
                 if (haveBigFiles) {

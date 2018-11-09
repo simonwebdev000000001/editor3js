@@ -134,6 +134,26 @@ export class MEvents extends GLMain {
         }
         switch (event.keyCode) {
 
+            case 46: {//Del 
+                if (control && control.tempParent) {
+
+                    for (let i = 0; i < control.tempParent.children.length; i++) {
+                        let child = control.tempParent.children[i];
+                        if (child._control) { 
+                            child._control.remove();
+                        } else {
+                            control.tempParent.remove(child);
+                        }
+                        i--;  
+                    }
+                    control.detach();
+                    control.parent.remove(control);
+                    control.tempParent.parent.remove(control.tempParent);
+                    control.tempParent = null;
+                    return this.Utils.Config.onEventPrevent(event, true);
+                }
+                break;
+            }
             case 37: {//Left 
                 if (control && control.tempParent) {
                     control.tempParent.position.x -= GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;

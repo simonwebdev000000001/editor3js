@@ -1,0 +1,33 @@
+.webgl-view {
+  .labels {
+    position: absolute;
+    z-index: 10;
+    pointer-events: none;
+    .label-container {
+      max-width: 90px;
+      position: absolute;
+      background: white;
+      border: 1px solid gray;
+      border-radius: 2px;
+      padding: 2px;
+
+      &.out {
+        opacity: 0.2;
+      }
+      .label-title {
+        text-align: center;
+        width: 100%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: 100%;
+      }
+      .label-item {
+        padding: 0 5px;
+        border-bottom: 1px solid gray;
+        b {
+          margin: 5px 0;
+        }
+      }
+    }
+  }
+}

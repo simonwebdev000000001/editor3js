@@ -6,7 +6,7 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     sass = require('gulp-sass'),
     sourcemaps = require('gulp-sourcemaps'),
-//rigger = require('gulp-rigger'),
+    //rigger = require('gulp-rigger'),
     cssmin = require('gulp-minify-css'),
     imagemin = require('gulp-imagemin'),
     pngquant = require('imagemin-pngquant'),
@@ -33,7 +33,7 @@ var buffer = require('vinyl-buffer');
 var concat = require('gulp-concat');
 
 var server = require('gulp-server-livereload');
- 
+
 
 function guidGenerator() {
     var S4 = function () {
@@ -54,8 +54,8 @@ var path = {
         fonts: 'src/fonts/**/*.*'
     },
     out: {
-        js: {origin: 'main.js', hash: guidGenerator() + '.js'},
-        style: {origin: 'style.css', hash: guidGenerator() + '.css'},
+        js: { origin: 'main.js', hash: guidGenerator() + '.js' },
+        style: { origin: 'style.css', hash: guidGenerator() + '.css' },
     },
     watch: {
         js: ['src/app/**/*.js', 'src/app/libs/**/*.js'],
@@ -91,7 +91,7 @@ gulp.task('style:build', function () {
         }).on('error', sass.logError))
         .pipe(prefixer())
         .pipe(cssmin())
-        .pipe(cssnano({zindex: false}))
+        .pipe(cssnano({ zindex: false }))
         .pipe(autoprefixer({
             browsers: ['last 16 versions'],
             cascade: false
@@ -103,28 +103,28 @@ gulp.task('style:build', function () {
         //.pipe(concat(path.out.style.hash))
         //.pipe(sourcemaps.write())
         .pipe(gulp.dest(path.build.js))
-        .pipe(notify({message: 'Styles task complete'}))
-        .pipe(reload({stream: true}));
+        .pipe(notify({ message: 'Styles task complete' }))
+        .pipe(reload({ stream: true }));
 });
 gulp.task('js:build', function () {
     // del.sync(path.build.js);
 
     var paths = "./src/libs/",
         govnoKode = "../../../../page1/",
-        jslibs = streamqueue({objectMode: true},
+        jslibs = streamqueue({ objectMode: true },
             gulp.src(paths + "threejs/three.js"),
             // gulp.src(paths + "threejs/RGBELoader.js"),
             // gulp.src(paths + "threejs/HDRCubeTextureLoader.js"),
             gulp.src(paths + "dat.gui.min.js"),
-            gulp.src(paths + "threejs/STLLoader.js"), 
-            gulp.src(paths + "threejs/BufferGeometryUtils.js"), 
+            gulp.src(paths + "threejs/STLLoader.js"),
+            gulp.src(paths + "threejs/BufferGeometryUtils.js"),
             // gulp.src(paths + "fabric.min.js"),
             //gulp.src(paths + "pace.js"),
             gulp.src(paths + "Tween.js"),
-            gulp.src(paths + "threejs/STLExporter.js"), 
+            gulp.src(paths + "threejs/STLExporter.js"),
             // gulp.src("src/libs/OBJExporter.js"),
             // gulp.src(paths + "../../node_modules/async/dist/async.min.js"),
-           // gulp.src(paths + "threejs/stats.min.js"),
+            // gulp.src(paths + "threejs/stats.min.js"),
             gulp.src(paths + "threejs/Detector.js"),
             // gulp.src(paths + "threejs/env/SkyShader.js"),
             gulp.src(paths + "threejs/OOrbitControls.js"),
@@ -184,7 +184,7 @@ gulp.task('js:build', function () {
             // gulp.src(paths + "ripple.min.js"),
 
 
-            gulp.src( "bower_components/stackblur-canvas/dist/stackblur.js")
+            gulp.src("bower_components/stackblur-canvas/dist/stackblur.js")
 
 
         )
@@ -194,7 +194,7 @@ gulp.task('js:build', function () {
             })
             .pipe(concat('vendors.js'));
 
-    var jse6 = browserify(path.src.js, {debug: false}).transform(babelify, {
+    var jse6 = browserify(path.src.js, { debug: false }).transform(babelify, {
         presets: ["es2015"],
         plugins: ["transform-class-properties"]
     }).bundle()
@@ -212,8 +212,8 @@ gulp.task('js:build', function () {
         .pipe(concat(path.build.name + '.js'))
         //.pipe(uglify())
         .pipe(gulp.dest(path.build.js))
-        .pipe(notify({message: 'JS task complete'}))
-        .pipe(reload({stream: true}));
+        .pipe(notify({ message: 'JS task complete' }))
+        .pipe(reload({ stream: true }));
 });
 
 gulp.task('image:build', function () {
@@ -221,13 +221,13 @@ gulp.task('image:build', function () {
     gulp.src(path.src.img)
         .pipe(imagemin({
             progressive: true,
-            svgoPlugins: [{removeViewBox: false}],
+            svgoPlugins: [{ removeViewBox: false }],
             use: [pngquant()],
             interlaced: true
         }))
         .pipe(gulp.dest(path.build.img))
         //.pipe(notify({ message: 'Images task complete' }))
-        .pipe(reload({stream: true}));
+        .pipe(reload({ stream: true }));
 });
 
 
@@ -242,13 +242,17 @@ gulp.task('build', [
     //,'image:build'
 ]);
 
-gulp.task('webserver', function() {
-  gulp.src('')
-    .pipe(server({
-      livereload: true,
-      directoryListing: true,
-      open: true
-    }));
+gulp.task('webserver', function () {
+    gulp.src('')
+        .pipe(server({
+            // directoryListing: {
+            //     enable: true,
+            //     path: 'build'
+            // },
+            // livereload: true,
+            // directoryListing: true,
+            open: true
+        }));
 });
 gulp.task('watch', function () {
     watch(path.watch.js, function (event, cb) {
@@ -264,4 +268,4 @@ gulp.task('watch', function () {
 
 
 // gulp.task('default', ['build', 'watch']);
-gulp.task('default', ['build', 'watch','webserver']);
+gulp.task('default', ['build', 'watch', 'webserver']);

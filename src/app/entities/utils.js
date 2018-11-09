@@ -4,22 +4,31 @@
 export default class GUtils {
 
     static SETTINGS = {
+        ROUND:2,
         CONTAINER_APP_ID: 'WEBGLVIEW',
         MAX_TOTAL_FILE_SIZE: 1024 * 1000 * 1000 * 10,//1024 -1 kb, 1024*1000 1bm,
         MAX_SINGE_FILE_SIZE: 1024 * 1000 * 1000 * 2,
         MAX_FILE_ITEMS_COUNT: 1000,
-        SELECTED_COLOR:new THREE.Color(135/255,  210/255, 221/255)
+        SELECTED_COLOR: new THREE.Color(135 / 255, 210 / 255, 221 / 255)
     }
 
     static CONTROLS = {
         INCREMENTS: {
             TRANSLATE: 1,
             ROTATE: 1,
-            KEYBOARD_TRANSLATE:10
+            KEYBOARD_TRANSLATE: 10
         }
     }
-    static COLORS={
-        EDGE:'#6d7c8b',
+    static COLORS = {
+        EDGE: '#6d7c8b',
+
+        BLUE: '#659BE0',
+        RED: '#F45959',
+        GREEN: '#52BE7F',
+        GRAY: '#6D7C8B',
+        BACKGROUND: '#ECECF0'
+
+
     }
     static CHAMPER = {
         WIDTH: 100,//x
@@ -27,6 +36,60 @@ export default class GUtils {
         DEPTH: 100//z
     }
 
+    static DIMENSION = {
+        CURRENT: {
+            value: 1,
+            text: 'mm'
+        },
+        MM: {
+            value: 1,
+            text: 'mm'
+        }
+    }
+    static label(el) {
+        var amap = new THREE.Texture(
+            GUtils.createCanvas(
+                {
+                    text: `${el.size} ${GUtils.DIMENSION.CURRENT.text}`
+                }
+            )
+        );
+        amap.needsUpdate = true;
+
+        var mat = new THREE.SpriteMaterial({
+            map: amap,
+            transparent: true,
+            // useScreenCoordinates: false,
+            // color: 0x000000
+        });
+        var sp = new THREE.Sprite(mat);
+        // sp.position.copy(_points[0].clone().addScaledVector(direction, el.size / 2));
+        sp.scale.set(-10, 5, -10); // CHANGED
+        return sp;
+    }
+    
+
+    static createCanvas({ text }) {
+        let canvas = document.createElement('canvas'),
+            fontSize = 126,
+            padding = 10,
+            sizeWidth = text.length * (fontSize / 2) + 8 * padding,
+            sieHeight = fontSize + 4 * padding;
+        canvas.width = sizeWidth;
+        canvas.height = sieHeight;
+        var context = canvas.getContext('2d');
+        context.fillStyle = GUtils.COLORS.GRAY;
+        context.textAlign = 'center';
+        context.font = fontSize + 'px Arial';
+        context.fillText(text, sizeWidth / 2, sieHeight / 2 + padding);
+
+
+        // console.log(sizeWidth, sieHeight);
+        // document.body.appendChild(canvas);
+        // canvas.style.position = 'absolute';
+        // canvas.style.zIndex = '10';
+        return canvas;
+    }
     static dataURItoBlob(dataURI) {
         // convert base64 to raw binary data held in a string
         // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this

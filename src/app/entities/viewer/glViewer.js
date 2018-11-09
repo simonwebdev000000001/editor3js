@@ -5,6 +5,7 @@ import { MStorage } from "../helpers/MStorage.js";
 import { resolve } from "path";
 import GUtils from "../utils";
 
+import ModelPart from './modelPart';
 import GlUi from "./glUI";
 
 /**
@@ -27,6 +28,10 @@ export class GlViewer {
             containerHandler = (container.addEventListener || container.attachEvent).bind(container);
         container.className += ' viewer webgl-view';
         container.setAttribute("id", GUtils.SETTINGS.CONTAINER_APP_ID);
+
+        let labelContainer = this.labelContainer = document.createElement('div');
+        labelContainer.className = 'labels';
+        container.appendChild(labelContainer);
         let _d = this.glcontainer = document.createElement('div');
         _d.className = 'center-container THREEJS';
         container.appendChild(_d);
@@ -62,17 +67,39 @@ export class GlViewer {
 
         this._animation = new Animation(this);
         this._events = new MEvents(this);
+
+        this.zoomCamera();
         // this._transformUI = new TransformControls(this);
 
         // this.preloader.fade();  
     }
 
+    toScreenPosition(obj) {
+        let { camera, gl } = this;
+        var vector = new THREE.Vector3();
+
+        var widthHalf = 0.5 * gl.context.canvas.width;
+        var heightHalf = 0.5 * gl.context.canvas.height;
+
+        obj.updateMatrixWorld();
+        vector.setFromMatrixPosition(obj.matrixWorld);
+        vector.project(camera);
+
+        vector.x = (vector.x * widthHalf) + widthHalf;
+        vector.y = - (vector.y * heightHalf) + heightHalf;
+
+        return {
+            x: Math.round(vector.x),
+            y: Math.round(vector.y)
+        };
+
+    }
     updateMaterials() {
         this.lights.visible = false;
         let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
             _type = parseInt(this.materialType);
 
-            this.model._selectedMaterial = new THREE.MeshPhongMaterial({color:'#87d2dd'});
+        this.model._selectedMaterial = new THREE.MeshPhongMaterial({ color: '#87d2dd' });
         switch (_type) {
             case 1: {
                 _m.wireframe = true;
@@ -90,16 +117,14 @@ export class GlViewer {
             }
         });
     }
-    loadStlFile(url) {
+    loadStlFile(url,name) {
         return new Promise((resolve, reject) => {
             let self = this;
             var loader = new THREE.STLLoader();
             loader.load(url, (orGeometry) => {
                 this.fillMeshInChamber(orGeometry);
 
-                var mesh = new THREE.Mesh(orGeometry, self.model._curMaterial);
-                mesh.isIntersectable = true;
-                self.model.add(mesh);
+                new ModelPart(this, {orGeometry,name});
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
@@ -143,37 +168,34 @@ export class GlViewer {
         let mesh = new THREE.Mesh(geometry),
             helper = new THREE.BoxHelper(mesh),
             center = helper.geometry.boundingSphere.center.clone().negate(),
+            _center = this.scene.helper._boxHelper.geometry.boundingSphere.center,
             scale = this.scene.helper._boxHelper.geometry.boundingSphere.radius / helper.geometry.boundingSphere.radius;
         helper.geometry.computeBoundingBox();
 
         let box = helper.geometry.boundingBox,
             _height = box.min.y - box.max.y,
             height = Math.sqrt(_height * _height);
+
+
         geometry.translate(center.x, (center.y + height / 2), center.z);
         geometry.scale(scale, scale, scale);
-    }
-
-    updateTabSizeInfo(size) {
-        if (this.tabSizeInfo.timeOutAct) clearTimeout(this.tabSizeInfo.timeOutAct);
-        this.tabSizeInfo.innerHTML = 'approximate size in px:<br>' + size.width.toFixed(2) + " x " + size.height.toFixed(2) + " px<br>";
-        this.tabSizeInfo.className = 'tab-size-info active';
-        this.tabSizeInfo.timeOutAct = setTimeout(() => {
-            this.tabSizeInfo.className = 'tab-size-info';
-        }, 5000)
+        center.add(_center);
+        geometry.translate(center.x, 0, center.z);
 
     }
+
 
     updateRender(settings) {
         let _set = settings || {};
         _set.clearColor = false;
-        _set.antialias  = true;
+        _set.antialias = true;
         // _set.preserveDrawingBuffer = true;
         //_set.physicallyCorrectLights = true;
         if (this.gl) _set.canvas = this.gl.domElement;
         let renderer = this.gl = new THREE.WebGLRenderer(_set);
         renderer.toneMapping = THREE.LinearToneMapping;
         for (let _f in _set) renderer[_f] = _set[_f];
-        renderer.setClearColor('#e0e0e6',1);
+        renderer.setClearColor(GUtils.COLORS.BACKGROUND, 1);
         //renderer.shadowMap.enabled = true;//!!_set.shadows;
         //renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.sortObjects = false;
@@ -231,17 +253,28 @@ export class GlViewer {
         controls.rotateSpeedUP = 0.06493;
         //controls.zoomSpeed = 0.87;
         //if (isMobile) controls.zoomSpeed = 1;
-        controls.enableKeys=false
+        controls.enableKeys = false
         controls.maxPolarAngle = Math.PI * 0.461;
         controls.addEventListener('change', (e) => {
             this.refresh();
+            this.scene.traverse((child) => {
+                if (child._control) {
+                    child._control.updateLabel();
+                }
+            })
         });
         let transformControls = this.transformControls = new THREE.TransformControls(camera, renderer.domElement);
 
 
         transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
-        transformControls.addEventListener('change', function () {
+        transformControls.addEventListener('change', () => {
+            this.scene.traverse((child) => {
+                if (child._control) {
 
+                    child._control.updateLabel();
+                    child._control.updateLabelValue();
+                }
+            })
         });
         transformControls.addEventListener('dragging-changed', function (event) {
             controls.enabled = !event.value;
@@ -259,33 +292,146 @@ export class GlViewer {
 
     applyBoxChamber() {
         if (this.chamber) {
-            this.chamber.parent.remove(this.chamber);
-            this.chamber.gridHelper.parent.remove(this.chamber.gridHelper);
+            this.chamber.parent.parent.remove(this.chamber.parent);
+            // this.chamber.parent.remove(this.chamber);
+            // this.chamber.gridHelper.parent.remove(this.chamber.gridHelper);
         }
         let box = new THREE.Mesh(new THREE.BoxBufferGeometry(
             GUtils.CHAMPER.WIDTH,
             GUtils.CHAMPER.HEIGHT,
             GUtils.CHAMPER.DEPTH
         ));
-        box.position.y = GUtils.CHAMPER.HEIGHT / 2;
-        this.chamber = new THREE.BoxHelper(box, '#6d7c8b');
+        box.position.set(
+            GUtils.CHAMPER.WIDTH / 2,
+            GUtils.CHAMPER.HEIGHT / 2,
+            GUtils.CHAMPER.DEPTH / 2
+        );
+        // box.position.y = GUtils.CHAMPER.HEIGHT / 2;
+        this.chamber = new THREE.BoxHelper(box, GUtils.COLORS.GRAY);
 
         let size = 100,
             divisions = 10,
-            gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions,0x444444,'#6d7c8b');
+            gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions, 0x444444, GUtils.COLORS.GRAY),
+            middleLines = [
+                {
+                    color: GUtils.COLORS.RED,
+                    scale: 'z',
+                    points: [
+                        new THREE.Vector3(-size / 2, 0, 0),
+                        new THREE.Vector3(size / 2, 0, 0)
+                    ]
+                },
+                {
+                    color: GUtils.COLORS.BLUE,
+                    scale: 'x',
+                    points: [
+                        new THREE.Vector3(0, 0, -size / 2),
+                        new THREE.Vector3(0, 0, size / 2)
+                    ]
+                }
+            ];
 
         gridHelper.scale.x = GUtils.CHAMPER.WIDTH / size;
         gridHelper.scale.z = GUtils.CHAMPER.DEPTH / size;
+        gridHelper.position.set(
+            (GUtils.CHAMPER.WIDTH / 2),
+            0,
+            (GUtils.CHAMPER.DEPTH / 2)
+        );
+        middleLines.forEach((el) => {
+            let
+                curve = new THREE.CatmullRomCurve3(el.points),
+                geometry = new THREE.TubeBufferGeometry(curve, 10, 1, 10, false),
+                material = new THREE.MeshPhongMaterial({
+                    color: el.color
+                }),
+                scale = 0.2,
+                mesh = new THREE.Mesh(geometry, material);
+            mesh.scale[el.scale] = scale;
+            mesh.scale.y = scale;
+            gridHelper.add(mesh);
+        })
 
-        if (!this.scene.helper) {
-            this.scene.helper = new THREE.Object3D();
-            this.scene.add(this.scene.helper);
-        }
-        this.scene.helper._box = new THREE.BoxHelper(this.scene.helper);
+        // if (!this.scene.helper) {
+        let helper = this.scene.helper = new THREE.Object3D();
+        this.scene.add(this.scene.helper);
+        // }
         this.scene.helper.add(gridHelper);
         this.scene.helper.add(this.chamber);
 
-        this.scene.helper._boxHelper = new THREE.BoxHelper(this.scene.helper);
+        let axes = new THREE.Object3D(),
+            axisLbels = new THREE.Object3D(),
+            axises = [
+                {
+                    points: [
+                        new THREE.Vector3(0, 0, 0),
+                        new THREE.Vector3(0, 1, 0)
+                    ],
+                    size: GUtils.CHAMPER.HEIGHT,
+                    color: GUtils.COLORS.GREEN,
+                },
+                {
+                    points: [
+                        new THREE.Vector3(0, 0, 0),
+                        new THREE.Vector3(0, 0, 1)
+                    ],
+                    size: GUtils.CHAMPER.DEPTH,
+                    vector3: new THREE.Vector3(-1, 0, 0),
+                    quaternion: new THREE.Vector3(1, 0, 0),
+                    color: GUtils.COLORS.BLUE
+                },
+                {
+                    points: [
+                        new THREE.Vector3(0, 0, 0),
+                        new THREE.Vector3(1, 0, 0)
+                    ],
+                    size: GUtils.CHAMPER.WIDTH,
+                    vector3: new THREE.Vector3(0, 0, -1),
+                    quaternion: new THREE.Vector3(0, 0, -1),
+                    color: GUtils.COLORS.RED
+                }
+            ]
+
+
+        axises.forEach((el) => {
+            let _points = [...el.points],
+                dist = el.size / 5,
+                direction = _points[1].clone();
+            _points[1] = _points[0].clone().addScaledVector(direction, dist);
+
+            let
+                curve = new THREE.CatmullRomCurve3(_points),
+                size = 0.5,
+                conusHeight = 10 * size,
+                geometry = new THREE.TubeBufferGeometry(curve, 10, size, 10, true),
+                material = new THREE.MeshPhongMaterial({
+                    color: el.color
+                }),
+                mesh = new THREE.Mesh(geometry, material);
+
+            geometry = new THREE.ConeBufferGeometry(2 * size, conusHeight, 64);
+            let cone = new THREE.Mesh(geometry, material);
+            cone.position.addScaledVector(direction, dist);
+            axes.add(mesh);
+            mesh.add(cone);
+
+            if (el.quaternion) {
+                let quaternion = new THREE.Quaternion();
+                quaternion.setFromAxisAngle(el.quaternion, Math.PI / 2);
+                cone.quaternion.slerp(quaternion, 1);
+
+            }
+            //axis labels
+            let sp = GUtils.label(el);
+            sp.position.copy(_points[0].clone().addScaledVector(direction, el.size / 2));
+            if (el.vector3) sp.position.addScaledVector(el.vector3, 10)
+            axisLbels.add(sp);
+        })
+
+        helper.add(axes);
+        helper.add(axisLbels);
+
+        helper._boxHelper = new THREE.BoxHelper(this.scene.helper);
     }
 
 
@@ -331,25 +477,27 @@ export class GlViewer {
     }
 
     zoomCamera(model, nPosition, _target, onFinish) {
-        if (!model && !this.model.children.length) return;
-        if (!nPosition) nPosition = this.model.position;
+        // if (!model && !this.model.children.length) return;
+        if (!nPosition) nPosition = this.scene.helper._boxHelper.geometry.boundingSphere.center.clone();
         let fix = nPosition.fix;
         nPosition = new THREE.Vector3(nPosition.x, nPosition.y, nPosition.z);
         let target = nPosition.clone();
         if (_target) target = _target;
-        let radius = this.model.radius;
-        if (!radius) {
-            radius = this.reCalcRadius();
-            //let boxHelper = new THREE.BoxHelper(model || this.model);
-            //radius = boxHelper.geometry.boundingSphere.radius;
-            //this.model.boxHelper = boxHelper;
-            //boxHelper.geometry.computeBoundingBox();
-        }
+        let radius = this.scene.helper._boxHelper.geometry.boundingSphere.radius;//= this.model.radius;
+
+        // if (!radius) {
+        // radius = this.reCalcRadius();
+        // target = this.scene.helper._boxHelper.geometry.boundingSphere.center.clone(); 
+        //let boxHelper = new THREE.BoxHelper(model || this.model);
+        //radius = boxHelper.geometry.boundingSphere.radius;
+        //this.model.boxHelper = boxHelper;
+        //boxHelper.geometry.computeBoundingBox();
+        // }
 
         let sc = 2.2,
             newPst = fix ? nPosition.clone() : nPosition.clone().addScaledVector(this.camera.getWorldDirection().negate(), radius * sc);
 
-        this.model.radius = radius;
+        // this.model.radius = radius;
 
         if (onFinish) {
             this.camera.position.copy(newPst);
