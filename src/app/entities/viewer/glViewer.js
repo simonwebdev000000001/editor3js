@@ -122,7 +122,7 @@ export class GlViewer {
             let self = this;
             var loader = new THREE.STLLoader();
             loader.load(url, (orGeometry) => {
-                this.fillMeshInChamber(orGeometry);
+                if(GUtils.SETTINGS.SHOULD_FILL)this.fillMeshInChamber(orGeometry);
 
                 new ModelPart(this, {orGeometry,name});
                 //alert("Loaded");
@@ -296,7 +296,14 @@ export class GlViewer {
             // this.chamber.parent.remove(this.chamber);
             // this.chamber.gridHelper.parent.remove(this.chamber.gridHelper);
         }
-        let box = new THREE.Mesh(new THREE.BoxBufferGeometry(
+        let
+            scalebleItems = new THREE.Object3D(),
+            scale = new THREE.Vector3(
+                GUtils.CHAMPER.WIDTH/GUtils.CHAMPER.DEFAULT,
+                GUtils.CHAMPER.HEIGHT/GUtils.CHAMPER.DEFAULT,
+                GUtils.CHAMPER.HEIGHT/GUtils.CHAMPER.DEFAULT
+            ),
+            box = new THREE.Mesh(new THREE.BoxBufferGeometry(
             GUtils.CHAMPER.WIDTH,
             GUtils.CHAMPER.HEIGHT,
             GUtils.CHAMPER.DEPTH
@@ -309,9 +316,10 @@ export class GlViewer {
         // box.position.y = GUtils.CHAMPER.HEIGHT / 2;
         this.chamber = new THREE.BoxHelper(box, GUtils.COLORS.GRAY);
 
-        let size = 100,
+        let size = GUtils.CHAMPER.DEFAULT,
             divisions = 10,
             gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions, 0x444444, GUtils.COLORS.GRAY),
+            gridMiddleHelper = new THREE.Object3D(),
             middleLines = [
                 {
                     color: GUtils.COLORS.RED,
@@ -346,18 +354,23 @@ export class GlViewer {
                     color: el.color
                 }),
                 scale = 0.2,
-                mesh = new THREE.Mesh(geometry, material);
+                mesh = new THREE.Mesh(geometry,  new THREE.LineBasicMaterial({
+                    color: el.color,
+                    linewidth: 13,
+                }));
             mesh.scale[el.scale] = scale;
             mesh.scale.y = scale;
-            gridHelper.add(mesh);
-        })
 
+            gridMiddleHelper.add(mesh);
+        })
+        gridHelper.add(gridMiddleHelper);
         // if (!this.scene.helper) {
         let helper = this.scene.helper = new THREE.Object3D();
         this.scene.add(this.scene.helper);
         // }
         this.scene.helper.add(gridHelper);
         this.scene.helper.add(this.chamber);
+        this.chamber.add(scalebleItems);
 
         let axes = new THREE.Object3D(),
             axisLbels = new THREE.Object3D(),
@@ -395,13 +408,14 @@ export class GlViewer {
 
         axises.forEach((el) => {
             let _points = [...el.points],
-                dist = el.size / 5,
+                dist = Math.max(GUtils.CHAMPER.DEFAULT / 5,0.5),
+                scaleL = el.size/GUtils.CHAMPER.DEFAULT,
                 direction = _points[1].clone();
             _points[1] = _points[0].clone().addScaledVector(direction, dist);
 
             let
                 curve = new THREE.CatmullRomCurve3(_points),
-                size = 0.5,
+                size = dist*0.05,
                 conusHeight = 10 * size,
                 geometry = new THREE.TubeBufferGeometry(curve, 10, size, 10, true),
                 material = new THREE.MeshPhongMaterial({
@@ -414,6 +428,7 @@ export class GlViewer {
             cone.position.addScaledVector(direction, dist);
             axes.add(mesh);
             mesh.add(cone);
+            mesh.scale.multiplyScalar(scaleL);
 
             if (el.quaternion) {
                 let quaternion = new THREE.Quaternion();
@@ -424,14 +439,21 @@ export class GlViewer {
             //axis labels
             let sp = GUtils.label(el);
             sp.position.copy(_points[0].clone().addScaledVector(direction, el.size / 2));
-            if (el.vector3) sp.position.addScaledVector(el.vector3, 10)
+            if (el.vector3) sp.position.addScaledVector(el.vector3, dist*0.5*scaleL);
+            sp.scale.multiplyScalar(scaleL);
             axisLbels.add(sp);
         })
 
         helper.add(axes);
         helper.add(axisLbels);
 
+
         helper._boxHelper = new THREE.BoxHelper(this.scene.helper);
+
+        let scaleEl = helper._boxHelper.geometry.boundingSphere.radius /87.46;
+        // scalebleItems.scale.multiplyScalar( scaleEl);
+        gridMiddleHelper.scale.y = scaleEl;
+        // console.log(scaleEl)
     }
 
 

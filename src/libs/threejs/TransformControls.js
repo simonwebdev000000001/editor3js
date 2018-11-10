@@ -655,6 +655,7 @@ THREE.TransformControlsGizmo = function () {
 
 	var matHelper = gizmoMaterial.clone();
 	matHelper.opacity = 0.33;
+    matHelper.color.set(COLORS.RED);
 
 	var matRed = gizmoMaterial.clone();
 	matRed.color.set(COLORS.RED);

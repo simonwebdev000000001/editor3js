@@ -19,6 +19,13 @@ export default class GlUi {
            
             <form action="" class="" style="background:white">
                 <input type="file" name="myFile" accept=".stl" multiple>
+                 <fieldset id="group1">
+                    <h3>Main Settings</h3>
+                    <div class="d-flex s-b ">
+                        <input type="checkbox" id="setting-1"  data-controls="settings-should_fill"/>
+                        <label for="setting-1">Fill in chamber</label>
+                    </div> 
+                </fieldset> 
                 <fieldset id="group1">
                     <h3>Controls Settings</h3>
                     <div class="d-flex s-b ">
@@ -37,6 +44,7 @@ export default class GlUi {
                 <fieldset id="group1">
                     <h3>Controls Help</h3>
                     <ul>
+                        <li>Double Click to reset camera view in the middle of chamber</li> 
                         <li>Click on model to add to transform, second time clicking on same model will 
                         remove it from transform, click somewhere on scen will deselect all</li>
                         <li>Arrows Left and Right translate on X, Top and Down translate on Z, 
@@ -64,15 +72,15 @@ export default class GlUi {
                     <p>Edit chamber</p>
                     <div class="d-flex s-b ">
                         <span>X(width)</span>
-                        <input type="number" min="0" data-chamber="WIDTH" value="${GUtils.CHAMPER.WIDTH}"/>
+                        <input type="number" min="1" data-chamber="WIDTH" value="${GUtils.CHAMPER.WIDTH}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>Y(height)</span>
-                        <input type="number" min="0"data-chamber="HEIGHT" value="${GUtils.CHAMPER.HEIGHT}"/>
+                        <input type="number" min="1"data-chamber="HEIGHT" value="${GUtils.CHAMPER.HEIGHT}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>Z(depth)</span>
-                        <input type="number" min="0"data-chamber="DEPTH" value="${GUtils.CHAMPER.DEPTH}"/>
+                        <input type="number" min="1"data-chamber="DEPTH" value="${GUtils.CHAMPER.DEPTH}"/>
                     </div>
                  </fieldset>
                 
@@ -81,6 +89,7 @@ export default class GlUi {
             container.appendChild(fileContainer);
             let file = fileContainer.querySelector('input[type="file"]'),
                 radioButtons = fileContainer.querySelectorAll('input[type="radio"]'),
+                checkboxButtons = fileContainer.querySelectorAll('input[type="checkbox"]'),
                 exportBtns = fileContainer.querySelectorAll('button');
             file.addEventListener('change', function (e) {
                 let fileList = e.target.files,
@@ -155,7 +164,17 @@ export default class GlUi {
                     parent.exportToStl();
                 })
             }
-
+            for (let i = 0; i < checkboxButtons.length; i++) {
+                checkboxButtons[i].addEventListener('change', function (e) {
+                    e.preventDefault();
+                    switch (e.target.dataset.controls) {
+                        case 'settings-should_fill':{
+                            GUtils.SETTINGS.SHOULD_FILL = e.target.checked;
+                            break;
+                        }
+                    }
+                })
+            }
 
             //chanber settings
             let inputs = fileContainer.querySelectorAll('input[type="number"]');

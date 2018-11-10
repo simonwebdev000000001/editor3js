@@ -1,6 +1,8 @@
+import GUtils from "../../utils";
+
 export default class ModelPart {
 
-    constructor(viewer, { orGeometry, name }) {
+    constructor(viewer, {orGeometry, name}) {
         this.viewer = viewer;
         let parent = viewer.model,
             mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial);
@@ -10,6 +12,7 @@ export default class ModelPart {
 
         mesh._control = this;
         this._addLabelPositin();
+        this.toggleViewLabel();
         this.updateLabel();
         this.updateLabelValue();
     }
@@ -19,8 +22,9 @@ export default class ModelPart {
         this.labelContainer.innerHTML = "";
         this.labelContainer.parentNode.removeChild(this.labelContainer);
     }
+
     _addLabelPositin() {
-        let { viewer } = this;
+        let {viewer} = this;
         let helper = new THREE.BoxHelper(this.mesh);
         helper.geometry.computeBoundingBox();
 
@@ -61,34 +65,79 @@ export default class ModelPart {
         })
     }
 
-    updateLabelValue() {
-        [].forEach.call(this.labelContainer.children[1].children, (el) => {
-
-            let domLabel = el.children[1],
-                dimension = domLabel.dataset.dim;
-            domLabel.innerText = this.mesh._label_pivot._global_pst[dimension].toFixed(2);
-        });
+    canUpdate() {
+        return this.mesh.parent._category == GUtils.CATEGORIES.TEMP_TRANSFORM_CONTAINER;
     }
+
+    updateLabelValue() {
+        if (this.canUpdate()) {
+            [].forEach.call(this.labelContainer.children[1].children, (el) => {
+
+                let domLabel = el.children[1],
+                    dimension = domLabel.dataset.dim;
+                domLabel.innerText = this.mesh._label_pivot._global_pst[dimension].toFixed(2);
+            });
+        }
+
+    }
+
+
+    toggleSelect(isSelect, from,toS){
+        let el = this.mesh,
+            child = el;
+
+        if(isSelect){
+
+            el.updateMatrixWorld();
+            el.material = this.viewer.model._selectedMaterial;
+            THREE.SceneUtils.attach(el, from, toS);
+        }else{
+            child.parent.updateMatrixWorld();
+            child._orParent.updateMatrixWorld();
+            child.updateMatrixWorld();
+            child.material = child._material;
+            THREE.SceneUtils.detach(child, child.parent, child._orParent);
+        }
+
+        this.toggleViewLabel();
+    }
+
+    toggleViewLabel() {
+        let index = this.labelContainer.className.match(GUtils.CLASSES.HIDDEN);
+        if (!this.canUpdate()) {
+
+            if (!index ) this.labelContainer.className +=` ${GUtils.CLASSES.HIDDEN}`;
+        } else {
+            if (index) this.labelContainer.className = this.labelContainer.className.replace(` ${GUtils.CLASSES.HIDDEN}`,'');
+        }
+
+    }
+
     updateLabel() {
         this.updateLabelPosition();
         this.updateLabelVisibilty();
     }
+
     updateLabelPosition() {
-        let pst = this.viewer.toScreenPosition(this.mesh._label_pivot);
-        this.labelContainer.style.left = `${pst.x}px`;
-        this.labelContainer.style.top = `${pst.y}px`;
+        if (this.canUpdate()) {
+            let pst = this.viewer.toScreenPosition(this.mesh._label_pivot);
+            this.labelContainer.style.left = `${pst.x}px`;
+            this.labelContainer.style.top = `${pst.y}px`;
+        }
     }
+
     updateLabelVisibilty() {
+        if (this.canUpdate()) {
+            let {viewer, mesh, labelContainer} = this;
+            viewer.scene.updateMatrixWorld();
+            mesh._label_pivot.parent.updateMatrixWorld();
+            var vector = new THREE.Vector3();
+            vector.setFromMatrixPosition(mesh._label_pivot.matrixWorld);
 
-        let { viewer, mesh, labelContainer } = this;
-        viewer.scene.updateMatrixWorld();
-        mesh._label_pivot.parent.updateMatrixWorld();
-        var vector = new THREE.Vector3();
-        vector.setFromMatrixPosition(mesh._label_pivot.matrixWorld);
-
-        mesh._label_pivot._global_pst = vector;
-        labelContainer.className = labelContainer.className.replace(" out", '');
-        labelContainer.className +=
-            viewer.camera.position.distanceTo(vector) < viewer.camera.position.distanceTo(viewer.controls.target) ? '' : ' out';
+            mesh._label_pivot._global_pst = vector;
+            labelContainer.className = labelContainer.className.replace(" out", '');
+            labelContainer.className +=
+                viewer.camera.position.distanceTo(vector) < viewer.camera.position.distanceTo(viewer.controls.target) ? '' : ' out';
+        }
     }
 }

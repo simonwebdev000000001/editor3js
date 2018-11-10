@@ -309,11 +309,12 @@ export class MEvents extends GLMain {
 
 
     deselectFromControls(child) {
-        child.parent.updateMatrixWorld();
-        child._orParent.updateMatrixWorld();
-        child.updateMatrixWorld();
-        child.material = child._material;
-        THREE.SceneUtils.detach(child, child.parent, child._orParent);
+        // child.parent.updateMatrixWorld();
+        // child._orParent.updateMatrixWorld();
+        // child.updateMatrixWorld();
+        // child.material = child._material;
+        // THREE.SceneUtils.detach(child, child.parent, child._orParent);
+        child._control.toggleSelect(false,child.parent, child._orParent)
     }
     onTransformModel(object, shouldKeepleftitems, _parent) {
         let main = this.main,
@@ -362,6 +363,7 @@ export class MEvents extends GLMain {
         if (!transformControls.tempParent) {
             transformControls.tempParent = new THREE.Object3D();
             transformControls.tempParent.isNew = true;
+            transformControls.tempParent._category = GUtils.CATEGORIES.TEMP_TRANSFORM_CONTAINER;
             object.parent.add(transformControls.tempParent);
 
         }
@@ -382,9 +384,14 @@ export class MEvents extends GLMain {
 
         transformControls.tempParent.updateMatrixWorld();
         items.forEach((el) => {
-            el.updateMatrixWorld();
-            el.material = main.model._selectedMaterial;
-            THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
+            if(el._control){
+                el._control.toggleSelect(true,tempStore, transformControls.tempParent);
+            }else{
+                el.updateMatrixWorld();
+                el.material = main.model._selectedMaterial;
+                THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
+            }
+
         });
 
         transformControls.attach(transformControls.tempParent);

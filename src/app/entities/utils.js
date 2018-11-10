@@ -4,6 +4,7 @@
 export default class GUtils {
 
     static SETTINGS = {
+        SHOULD_FILL:false,
         ROUND:2,
         CONTAINER_APP_ID: 'WEBGLVIEW',
         MAX_TOTAL_FILE_SIZE: 1024 * 1000 * 1000 * 10,//1024 -1 kb, 1024*1000 1bm,
@@ -11,7 +12,12 @@ export default class GUtils {
         MAX_FILE_ITEMS_COUNT: 1000,
         SELECTED_COLOR: new THREE.Color(135 / 255, 210 / 255, 221 / 255)
     }
-
+    static CLASSES = {
+        HIDDEN:'hidden'
+    }
+    static CATEGORIES = {
+        TEMP_TRANSFORM_CONTAINER:11
+    }
     static CONTROLS = {
         INCREMENTS: {
             TRANSLATE: 1,
@@ -31,6 +37,7 @@ export default class GUtils {
 
     }
     static CHAMPER = {
+        DEFAULT: 100,//x
         WIDTH: 100,//x
         HEIGHT: 100,//y
         DEPTH: 100//z
