@@ -5,8 +5,9 @@ export default class ModelPart {
     constructor(viewer, {orGeometry, name}) {
         this.viewer = viewer;
         let parent = viewer.model,
-            mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial);
+            mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial.clone());
         mesh.isIntersectable = true;
+        mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
         mesh.name = name;
 
@@ -21,6 +22,28 @@ export default class ModelPart {
         this.mesh.parent.remove(this.mesh);
         this.labelContainer.innerHTML = "";
         this.labelContainer.parentNode.removeChild(this.labelContainer);
+    }
+
+    checkIfColision() {
+        if (this.isInCollision) {
+            if (!this.mesh.material.lastColor) {
+                this.mesh.material.lastColor = this.mesh.material.color.clone();
+            }
+            this.mesh.material.color = new THREE.Color(GUtils.COLORS.RED);
+        } else {
+            if (this.mesh.material.lastColor) {
+                this.mesh.material.color = this.mesh.material.lastColor;
+                this.mesh.material.lastColor = null;
+            }
+        }
+    }
+
+    onCollisioin(isInCollision = false) {
+        if (isInCollision != this.isInCollision) {
+            this.isInCollision = isInCollision;
+            this.checkIfColision();
+
+        }
     }
 
     _addLabelPositin() {
@@ -82,16 +105,17 @@ export default class ModelPart {
     }
 
 
-    toggleSelect(isSelect, from,toS){
+    toggleSelect(isSelect, from, toS) {
         let el = this.mesh,
             child = el;
 
-        if(isSelect){
+        if (isSelect) {
 
             el.updateMatrixWorld();
-            el.material = this.viewer.model._selectedMaterial;
+            el.material = this.viewer.model._selectedMaterial.clone();
             THREE.SceneUtils.attach(el, from, toS);
-        }else{
+            this.checkIfColision();
+        } else {
             child.parent.updateMatrixWorld();
             child._orParent.updateMatrixWorld();
             child.updateMatrixWorld();
@@ -106,9 +130,9 @@ export default class ModelPart {
         let index = this.labelContainer.className.match(GUtils.CLASSES.HIDDEN);
         if (!this.canUpdate()) {
 
-            if (!index ) this.labelContainer.className +=` ${GUtils.CLASSES.HIDDEN}`;
+            if (!index) this.labelContainer.className += ` ${GUtils.CLASSES.HIDDEN}`;
         } else {
-            if (index) this.labelContainer.className = this.labelContainer.className.replace(` ${GUtils.CLASSES.HIDDEN}`,'');
+            if (index) this.labelContainer.className = this.labelContainer.className.replace(` ${GUtils.CLASSES.HIDDEN}`, '');
         }
 
     }

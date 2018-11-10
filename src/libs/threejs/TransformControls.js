@@ -1154,15 +1154,15 @@ THREE.TransformControlsGizmo = function () {
 					handle.visible = this.dragging;
 
 				} else if (handle.name === 'DELTA') {
-
 					handle.position.copy(this.worldPositionStart);
 					handle.quaternion.copy(this.worldQuaternionStart);
 					tempVector.set(1e-10, 1e-10, 1e-10).add(this.worldPositionStart).sub(this.worldPosition).multiplyScalar(-1);
 					tempVector.applyQuaternion(this.worldQuaternionStart.clone().inverse());
 					handle.scale.copy(tempVector);
-					handle.visible = this.dragging;
+                    handle.visible = this.dragging;
 
-				} else {
+
+                } else {
 
 					handle.quaternion.copy(quaternion);
 

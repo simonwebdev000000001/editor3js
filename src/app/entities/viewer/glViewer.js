@@ -267,7 +267,15 @@ export class GlViewer {
 
 
         transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
+        transformControls.addEventListener('mouseDown', (...e) => {
+
+            transformControls.tempParent._box.onStartTranslate();
+        });
+        transformControls.addEventListener('mouseUp', () => {
+            transformControls.tempParent._box.onEndTranslate();
+        });
         transformControls.addEventListener('change', () => {
+            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart,transformControls.worldPosition);
             this.scene.traverse((child) => {
                 if (child._control) {
 

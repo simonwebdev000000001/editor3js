@@ -388,7 +388,7 @@ export class MEvents extends GLMain {
                 el._control.toggleSelect(true,tempStore, transformControls.tempParent);
             }else{
                 el.updateMatrixWorld();
-                el.material = main.model._selectedMaterial;
+                el.material = main.model._selectedMaterial.clone();
                 THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
             }
 

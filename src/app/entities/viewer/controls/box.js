@@ -1,7 +1,7 @@
 import GUtils from '../../utils'
 
 export default class BoxControls {
-    constructor({ tempStore, viewer }) {
+    constructor({tempStore, viewer}) {
         this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
         this.controls._tempStore = tempStore;
         this.viewer = viewer;
@@ -49,9 +49,9 @@ export default class BoxControls {
 
 
             let material = new THREE.LineBasicMaterial({
-                color: GUtils.COLORS.EDGE,
-                linewidth: 3,
-            }),
+                    color: GUtils.COLORS.EDGE,
+                    linewidth: 3,
+                }),
                 controls = new THREE.Object3D();
             controls._dimension = dimension;
             for (let j = 0; j < dimension.indexes.length; j += 2) {
@@ -60,7 +60,7 @@ export default class BoxControls {
                     vertices[dimension.indexes[j]],
                     vertices[dimension.indexes[j + 1]]
                 );
-                let line = (new BoxEdge({ geometry, material, parent: this })).edge;
+                let line = (new BoxEdge({geometry, material, parent: this})).edge;
                 line._category = 2;
                 line.isIntersectable = true;
                 controls.add(line);
@@ -73,12 +73,82 @@ export default class BoxControls {
     remove() {
         this.controls.parent.remove(this.controls);
     }
+
+    onStartTranslate() {
+        let tempLabelStore = this._tempLabelStore = new THREE.Object3D();
+        let div = tempLabelStore.labelTranslateContainer = document.createElement('div');
+        div.className = 'label-container label-transform';
+        div.style.backgroundColor = GUtils.COLORS.RED;
+        div.style.color = 'white';
+        this.viewer.labelContainer.appendChild(div);
+        this.viewer.scene.add(tempLabelStore);
+
+
+        //init All boxhelpers
+        this.viewer.transformControls.tempParent.traverse((child) => {
+            if (child.isIntersectable) {
+                child._temp_boundingBox = new THREE.BoxHelper(child);
+            }
+        })
+    }
+
+    onEndTranslate() {
+        this._tempLabelStore.parent.remove(this._tempLabelStore);
+        this._tempLabelStore.labelTranslateContainer._delete();
+        this._tempLabelStore = null;
+        this.viewer.scene.traverse((child) => {
+            if (child._category == GUtils.CATEGORIES.STL_LOADED_PART) {
+                child._control.onCollisioin(false);
+            }
+        })
+    }
+
+    onChangeTranslate(pst1, pst2) {
+        if (!this._tempLabelStore) return
+        this._tempLabelStore.position.copy(GUtils.getPointInBetweenByPerc(pst1, pst2));
+        let pst = this.viewer.toScreenPosition(this._tempLabelStore);
+        this._tempLabelStore.labelTranslateContainer.style.left = `${pst.x}px`;
+        this._tempLabelStore.labelTranslateContainer.style.top = `${pst.y}px`;
+        this._tempLabelStore.labelTranslateContainer.innerText = `${pst1.distanceTo(pst2).toFixed(GUtils.SETTINGS.ROUND)}${GUtils.DIMENSION.CURRENT.text}`;
+
+        this.checkCollision();
+    }
+
+    checkCollision() {
+        if (!this.viewer.transformControls.tempParent) return;
+        let indexes = [],collisions={};
+        this.viewer.transformControls.tempParent.traverse((child) => {
+            if (child._category == GUtils.CATEGORIES.STL_LOADED_PART) {
+
+                child.parent.updateMatrixWorld();
+                let vector = new THREE.Vector3(), isCollision = false;
+                vector.setFromMatrixPosition(child.matrixWorld);
+                let dist = child._temp_boundingBox.geometry.boundingSphere.radius;
+                indexes.push(child.uuid);
+                this.viewer.model.traverse((mesh) => {
+                    if (mesh._category == GUtils.CATEGORIES.STL_LOADED_PART && indexes.indexOf(mesh.uuid) < 0) {
+                        mesh.parent.updateMatrixWorld();
+                        let _vector = new THREE.Vector3();
+                        _vector.setFromMatrixPosition(mesh.matrixWorld);
+
+                        let isInCollision = vector.distanceTo(_vector) < dist;
+                        if (isInCollision) {
+                            collisions[mesh.uuid]= true;
+                            collisions[child.uuid]= true;
+                        }
+                        child._control.onCollisioin(collisions[child.uuid]);
+                        mesh._control.onCollisioin(collisions[mesh.uuid]);
+                    }
+                })
+            }
+        })
+    }
 }
 
 export class BoxEdge {
-    constructor({ geometry, material, parent }) {
+    constructor({geometry, material, parent}) {
         let edge = this.edge = new THREE.Line(geometry, material),
-            highLightMat = new THREE.LineBasicMaterial({ color: '#ff0000', linewidth: 3 }),
+            highLightMat = new THREE.LineBasicMaterial({color: '#ff0000', linewidth: 3}),
             self = this;
         this.controls = parent;
 
@@ -134,21 +204,23 @@ export class BoxEdge {
         edge._mouseoout = function (ev) {
             edge.material.color = edge.material.defcolor;
         }
-
     }
+
 
     removeLabels() {
         this.edge._tempLabelStore.parent.remove(this.edge._tempLabelStore);
         this.edge._tempLabelStore.labelAngleContainer._delete();
+        this.edge._tempLabelStore = null;
     }
+
     initRotateLabel() {
-        let { parent } = this.edge,
+        let {parent} = this.edge,
             helper = new THREE.BoxHelper(parent),
-            { _dimension } = parent,
+            {_dimension} = parent,
             tempLabelStore = this.edge._tempLabelStore = new THREE.Object3D(),
-            { radius } = helper.geometry.boundingSphere,
-            geometry = this._updateRingGeo({ radius }),
-            material = new THREE.MeshBasicMaterial({ color: GUtils.COLORS.RED, side: THREE.DoubleSide }),
+            {radius} = helper.geometry.boundingSphere,
+            geometry = this._updateRingGeo({radius}),
+            material = new THREE.MeshBasicMaterial({color: GUtils.COLORS.RED, side: THREE.DoubleSide}),
             mesh = this.edge._tempLabelStore.ringElement = new THREE.Mesh(geometry, material);
 
         tempLabelStore.position.copy(helper.geometry.boundingSphere.center);
@@ -171,7 +243,7 @@ export class BoxEdge {
         this.controls.viewer.scene.add(tempLabelStore);
 
         let div = tempLabelStore.labelAngleContainer = document.createElement('div');
-        div.className = 'label-container';
+        div.className = 'label-container label-transform';
         div.style.backgroundColor = GUtils.COLORS.RED;
         div.style.color = 'white';
         this.controls.viewer.labelContainer.appendChild(div);
@@ -200,19 +272,21 @@ export class BoxEdge {
         div.style.left = `${pst.x}px`;
         div.style.top = `${pst.y}px`;
     }
+
     updateRotateLabel() {
         // this.controls 
-        let { parent, _tempLabelStore } = this.edge,
-            { labelAngleContainer, ringElement } = _tempLabelStore,
+        let {parent, _tempLabelStore} = this.edge,
+            {labelAngleContainer, ringElement} = _tempLabelStore,
             angleRad = this.controls.viewer.transformControls.tempParent.rotation[parent._dimension.dimension],
             angleDeg = THREE.Math.radToDeg(
                 angleRad
             ),
             angleDegText = angleDeg.toFixed(GUtils.SETTINGS.ROUND);
-        ringElement.geometry = this._updateRingGeo({ thetaLength: angleRad / Math.PI * 2 });
+        ringElement.geometry = this._updateRingGeo({thetaLength: angleRad / Math.PI * 2});
         labelAngleContainer.innerHTML = `<span>${angleDegText}&deg;</span>`;
     }
-    _updateRingGeo({ radius, thetaLength = 0 }) {
+
+    _updateRingGeo({radius, thetaLength = 0}) {
         let _rad = radius || this.lastRadius;
         if (_rad) {
             this.lastRadius = _rad;

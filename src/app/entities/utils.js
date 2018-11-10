@@ -16,7 +16,8 @@ export default class GUtils {
         HIDDEN:'hidden'
     }
     static CATEGORIES = {
-        TEMP_TRANSFORM_CONTAINER:11
+        TEMP_TRANSFORM_CONTAINER:11,
+        STL_LOADED_PART:12
     }
     static CONTROLS = {
         INCREMENTS: {
@@ -52,6 +53,14 @@ export default class GUtils {
             value: 1,
             text: 'mm'
         }
+    }
+    static getPointInBetweenByPerc(pointA, pointB, percentage=0.5) {
+
+        var dir = pointB.clone().sub(pointA);
+        var len = dir.length();
+        dir = dir.normalize().multiplyScalar(len*percentage);
+        return pointA.clone().add(dir);
+
     }
     static label(el) {
         var amap = new THREE.Texture(
