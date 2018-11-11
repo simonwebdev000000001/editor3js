@@ -1,6 +1,4 @@
 
-
-
 export default class GUtils {
 
     static SETTINGS = {
@@ -28,6 +26,7 @@ export default class GUtils {
     }
     static COLORS = {
         EDGE: '#6d7c8b',
+        EDGE_1: '#f7f7f8',
 
         BLUE: '#659BE0',
         RED: '#F45959',
@@ -96,7 +95,9 @@ export default class GUtils {
         canvas.height = sieHeight;
         var context = canvas.getContext('2d');
         context.fillStyle = GUtils.COLORS.GRAY;
-        context.textAlign = 'center';
+
+        context.textBaseline="middle";
+        context.textAlign="center";
         context.font = fontSize + 'px Arial';
         context.fillText(text, sizeWidth / 2, sieHeight / 2 + padding);
 

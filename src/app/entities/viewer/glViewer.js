@@ -1,9 +1,10 @@
-import { Utils } from "../../utils.js";
-import { MEvents } from "./glEvents.js";
-import { MyGui } from "../helpers/MyGui.js";
-import { MStorage } from "../helpers/MStorage.js";
-import { resolve } from "path";
+import {Utils} from "../../utils.js";
+import {MEvents} from "./glEvents.js";
+import {MyGui} from "../helpers/MyGui.js";
+import {MStorage} from "../helpers/MStorage.js";
+import {resolve} from "path";
 import GUtils from "../utils";
+import CubeCameraView from "./controls/cube_camera";
 
 import ModelPart from './modelPart';
 import GlUi from "./glUI";
@@ -46,11 +47,8 @@ export class GlViewer {
         container.appendChild(tabSizeInfo);
 
 
-
-
-
         this.categories = {};
-        this.cash = { models: {} };
+        this.cash = {models: {}};
         this.iterToRender = 0;
         this.initScene();
         // this.preloader = new Utils.Preloader(this);
@@ -65,9 +63,33 @@ export class GlViewer {
         this._ui = new GlUi(_self);
 
 
+        this._cubeCamera = new CubeCameraView();
         this._animation = new Animation(this);
         this._events = new MEvents(this);
+        this.container.appendChild(this._cubeCamera.renderer.domElement);
 
+        this._cubeCamera.onChangeView = (view) => {
+            let cameraPst = this.camera.position,
+                target = this.controls.target,
+                newPst = target.clone().addScaledVector(view.position, cameraPst.distanceTo(target));
+
+            this.controls.autoRotate = false;
+            this.move({
+                onStart: () => {
+                    this.controls.enabled = true;
+                    this.refresh();
+                }, onComplete: () => {
+                    this.refresh();
+
+
+                }, list: [{
+                    onUpdate: (delta) => {
+                        this.camera.position.lerp(newPst, delta);
+                        this.camera.updateProjectionMatrix();
+                    }
+                }]
+            });
+        }
         this.zoomCamera();
         // this._transformUI = new TransformControls(this);
 
@@ -75,7 +97,7 @@ export class GlViewer {
     }
 
     toScreenPosition(obj) {
-        let { camera, gl } = this;
+        let {camera, gl} = this;
         var vector = new THREE.Vector3();
 
         var widthHalf = 0.5 * gl.context.canvas.width;
@@ -86,7 +108,7 @@ export class GlViewer {
         vector.project(camera);
 
         vector.x = (vector.x * widthHalf) + widthHalf;
-        vector.y = - (vector.y * heightHalf) + heightHalf;
+        vector.y = -(vector.y * heightHalf) + heightHalf;
 
         return {
             x: Math.round(vector.x),
@@ -94,12 +116,13 @@ export class GlViewer {
         };
 
     }
+
     updateMaterials() {
         this.lights.visible = false;
         let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
             _type = parseInt(this.materialType);
 
-        this.model._selectedMaterial = new THREE.MeshPhongMaterial({ color: GUtils.COLORS.SELECTED });
+        this.model._selectedMaterial = new THREE.MeshPhongMaterial({color: GUtils.COLORS.SELECTED});
         switch (_type) {
             case 1: {
                 _m.wireframe = true;
@@ -117,38 +140,57 @@ export class GlViewer {
             }
         });
     }
-    loadStlFile(url,name) {
+
+    loadStlFile(url, name) {
         return new Promise((resolve, reject) => {
             let self = this;
             var loader = new THREE.STLLoader();
             loader.load(url, (orGeometry) => {
-                if(GUtils.SETTINGS.SHOULD_FILL)this.fillMeshInChamber(orGeometry);
+                if (GUtils.SETTINGS.SHOULD_FILL) this.fillMeshInChamber(orGeometry);
 
-                new ModelPart(this, {orGeometry,name});
+                new ModelPart(this, {orGeometry, name});
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
-            }, (e) => { console.log(e) }, (e) => { console.log(e); reject(); }, (e) => { console.log(e) });
+            }, (e) => {
+                console.log(e)
+            }, (e) => {
+                console.log(e);
+                reject();
+            }, (e) => {
+                console.log(e)
+            });
         })
 
     }
-    exportToStl() {
+
+    exportToStl(e) {
         let exporter = new THREE.STLExporter();
         let arg = {}, indexPfMesh = 0;
         if (e.target.innerText == 'binary') {
             arg.binary = true;
         }
 
-        let listOfMeshes = _self.model.children;
+        let listOfMeshes = [];
+        this.scene.traverse((child) => {
+            if (child._category == GUtils.CATEGORIES.STL_LOADED_PART) {
+                listOfMeshes.push(child);
+            }
+
+        })
         if (!listOfMeshes.length) return alert("Import some model before export !!!");
-        let geoemtryTomerge = listOfMeshes[0].geometry;
+        let geoemtryTomerge = [];
         for (let i = 0; i < listOfMeshes.length; i++) {
-            geoemtryTomerge = THREE.BufferGeometryUtils.mergeBufferGeometries([geoemtryTomerge, listOfMeshes[i]]);
+            let model = listOfMeshes[i],
+                geo = listOfMeshes[i].geometry.clone();
+            geo.translate(model.position.x, (model.position.y), model.position.z);
+            geoemtryTomerge.push(geo);
         }
 
-        let meshToexprt = new THREE.Mesh(geoemtryTomerge);
+        let meshToexprt = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(geoemtryTomerge));
+
         function save(blob, filename) {
-            var link = document.createElement('a');
+            let link = document.createElement('a');
             link.style.display = 'none';
             document.body.appendChild(link);
             link.href = URL.createObjectURL(blob);
@@ -157,9 +199,11 @@ export class GlViewer {
             document.body.removeChild(link);
 
         }
+
         function saveArrayBuffer(buffer, filename) {
-            save(new Blob([buffer], { type: 'application/octet-stream' }), filename);
+            save(new Blob([buffer], {type: 'application/octet-stream'}), filename);
         }
+
         saveArrayBuffer(exporter.parse(meshToexprt, arg), 'mesh.stl');
     }
 
@@ -196,6 +240,7 @@ export class GlViewer {
         renderer.toneMapping = THREE.LinearToneMapping;
         for (let _f in _set) renderer[_f] = _set[_f];
         renderer.setClearColor(GUtils.COLORS.BACKGROUND, 1);
+        renderer.domElement.className = 'main-viewer';
         //renderer.shadowMap.enabled = true;//!!_set.shadows;
         //renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.sortObjects = false;
@@ -275,7 +320,7 @@ export class GlViewer {
             transformControls.tempParent._box.onEndTranslate();
         });
         transformControls.addEventListener('change', () => {
-            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart,transformControls.worldPosition);
+            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
             this.scene.traverse((child) => {
                 if (child._control) {
 
@@ -295,7 +340,6 @@ export class GlViewer {
         //scene.add(floor);
 
 
-
     }
 
     applyBoxChamber() {
@@ -307,15 +351,15 @@ export class GlViewer {
         let
             scalebleItems = new THREE.Object3D(),
             scale = new THREE.Vector3(
-                GUtils.CHAMPER.WIDTH/GUtils.CHAMPER.DEFAULT,
-                GUtils.CHAMPER.HEIGHT/GUtils.CHAMPER.DEFAULT,
-                GUtils.CHAMPER.HEIGHT/GUtils.CHAMPER.DEFAULT
+                GUtils.CHAMPER.WIDTH / GUtils.CHAMPER.DEFAULT,
+                GUtils.CHAMPER.HEIGHT / GUtils.CHAMPER.DEFAULT,
+                GUtils.CHAMPER.HEIGHT / GUtils.CHAMPER.DEFAULT
             ),
             box = new THREE.Mesh(new THREE.BoxBufferGeometry(
-            GUtils.CHAMPER.WIDTH,
-            GUtils.CHAMPER.HEIGHT,
-            GUtils.CHAMPER.DEPTH
-        ));
+                GUtils.CHAMPER.WIDTH,
+                GUtils.CHAMPER.HEIGHT,
+                GUtils.CHAMPER.DEPTH
+            ));
         box.position.set(
             GUtils.CHAMPER.WIDTH / 2,
             GUtils.CHAMPER.HEIGHT / 2,
@@ -362,7 +406,7 @@ export class GlViewer {
                     color: el.color
                 }),
                 scale = 0.2,
-                mesh = new THREE.Mesh(geometry,  new THREE.LineBasicMaterial({
+                mesh = new THREE.Mesh(geometry, new THREE.LineBasicMaterial({
                     color: el.color,
                     linewidth: 13,
                 }));
@@ -414,18 +458,18 @@ export class GlViewer {
             ]
 
 
-        let  dist = Math.max(GUtils.CHAMPER.DEFAULT / 5,0.5),
-        minScale=-Infinity;
+        let dist = Math.max(GUtils.CHAMPER.DEFAULT / 5, 0.5),
+            minScale = -Infinity;
         axises.forEach((el) => {
             let _points = [...el.points],
 
-                scaleL = el.size/GUtils.CHAMPER.DEFAULT,
+                scaleL = el.size / GUtils.CHAMPER.DEFAULT,
                 direction = _points[1].clone();
             _points[1] = _points[0].clone().addScaledVector(direction, dist);
-            minScale = Math.max(minScale,scaleL);
+            minScale = Math.max(minScale, scaleL);
             let
                 curve = new THREE.CatmullRomCurve3(_points),
-                size = dist*0.02,
+                size = dist * 0.02,
                 conusHeight = 10 * size,
                 geometry = new THREE.TubeBufferGeometry(curve, 10, size, 10, true),
                 material = new THREE.MeshPhongMaterial({
@@ -449,12 +493,12 @@ export class GlViewer {
             //axis labels
             let sp = GUtils.label(el);
             sp.position.copy(_points[0].clone().addScaledVector(direction, el.size / 2));
-            if (el.vector3) sp.position.addScaledVector(el.vector3, dist*0.5*scaleL);
+            if (el.vector3) sp.position.addScaledVector(el.vector3, dist * 0.5 * scaleL);
             sp.scale.multiplyScalar(scaleL);
             axisLbels.add(sp);
         })
 
-        let centerAxes = new THREE.Mesh(new THREE.SphereBufferGeometry(dist*0.03,36,36), new THREE.MeshPhongMaterial({
+        let centerAxes = new THREE.Mesh(new THREE.SphereBufferGeometry(dist * 0.03, 36, 36), new THREE.MeshPhongMaterial({
             color: 0xffffff
         }));
         centerAxes.scale.multiplyScalar(minScale);
@@ -465,7 +509,7 @@ export class GlViewer {
 
         helper._boxHelper = new THREE.BoxHelper(this.scene.helper);
 
-        let scaleEl = helper._boxHelper.geometry.boundingSphere.radius /87.46;
+        let scaleEl = helper._boxHelper.geometry.boundingSphere.radius / 87.46;
         // scalebleItems.scale.multiplyScalar( scaleEl);
         gridMiddleHelper.scale.y = scaleEl;
         // console.log(scaleEl)
@@ -576,7 +620,6 @@ export class GlViewer {
     }
 
 
-
     reCalcRadius(model) {
         let
             _model = model || this.model,
@@ -634,60 +677,54 @@ export class GlViewer {
     createLight(category, settings) {
         let light, helper;
         switch (+category) {
-            case 1:
-                {
-                    light = new THREE.AmbientLight(0xffffff, 0.81);
-                    break;
-                }
-            case 2:
-                {
-                    light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.09);
-                    helper = new THREE.HemisphereLightHelper(light, 5);
-                    light.position.set(0, 100, 0);
-                    break;
-                }
-            case 3:
-                {
-                    light = new THREE.SpotLight(0xffffff, 0.141);
-                    light.position.set(5, 5, 5);
-                    light.shadow.mapSize.width = 1024;
-                    light.shadow.mapSize.height = 1024;
-                    light.shadow.camera.near = 1;
-                    light.shadow.camera.far = this.camera.far;
-                    light.angle = 0.5;//Math.PI / 2;
-                    light.penumbra = 0.05;
-                    light.decay = 2;
-                    light.distance = this.camera.far;
-                    light.castShadow = true;
-                    light.shadow.mapSize.width = 1024;
-                    light.shadow.mapSize.height = 1024;
-                    light.shadow.camera.near = 10;
-                    light.shadow.camera.far = this.camera.far;
-                    helper = new THREE.SpotLightHelper(light);
-                    break;
-                }
-            case 4:
-                {
-                    light = new THREE.DirectionalLight(0xffffff, 0.15);
-                    light.position.set(5, 5, 5);
-                    light.shadow.mapSize.width = 1024;
-                    light.shadow.mapSize.height = 1024;
-                    light.shadow.camera.near = 1;
-                    light.shadow.camera.far = this.camera.far;
-                    helper = new THREE.DirectionalLightHelper(light, 5);
-                    break;
-                }
-            case 5:
-                {
-                    light = new THREE.PointLight(0xffffff, 2, 1024);
-                    light.position.set(0, 5, 0);
-                    helper = new THREE.PointLightHelper(light, 1);
-                    break;
-                }
-            default:
-                {
-                    return;
-                }
+            case 1: {
+                light = new THREE.AmbientLight(0xffffff, 0.81);
+                break;
+            }
+            case 2: {
+                light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.09);
+                helper = new THREE.HemisphereLightHelper(light, 5);
+                light.position.set(0, 100, 0);
+                break;
+            }
+            case 3: {
+                light = new THREE.SpotLight(0xffffff, 0.141);
+                light.position.set(5, 5, 5);
+                light.shadow.mapSize.width = 1024;
+                light.shadow.mapSize.height = 1024;
+                light.shadow.camera.near = 1;
+                light.shadow.camera.far = this.camera.far;
+                light.angle = 0.5;//Math.PI / 2;
+                light.penumbra = 0.05;
+                light.decay = 2;
+                light.distance = this.camera.far;
+                light.castShadow = true;
+                light.shadow.mapSize.width = 1024;
+                light.shadow.mapSize.height = 1024;
+                light.shadow.camera.near = 10;
+                light.shadow.camera.far = this.camera.far;
+                helper = new THREE.SpotLightHelper(light);
+                break;
+            }
+            case 4: {
+                light = new THREE.DirectionalLight(0xffffff, 0.15);
+                light.position.set(5, 5, 5);
+                light.shadow.mapSize.width = 1024;
+                light.shadow.mapSize.height = 1024;
+                light.shadow.camera.near = 1;
+                light.shadow.camera.far = this.camera.far;
+                helper = new THREE.DirectionalLightHelper(light, 5);
+                break;
+            }
+            case 5: {
+                light = new THREE.PointLight(0xffffff, 2, 1024);
+                light.position.set(0, 5, 0);
+                helper = new THREE.PointLightHelper(light, 1);
+                break;
+            }
+            default: {
+                return;
+            }
         }
         if (light) {
             light.castShadow = true;
@@ -726,16 +763,14 @@ export class GlViewer {
     createShape(category, settings) {
         let shape;
         switch (+category) {
-            case 1:
-                {
-                    shape = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial());
-                    break;
-                }
+            case 1: {
+                shape = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial());
+                break;
+            }
 
-            default:
-                {
-                    return;
-                }
+            default: {
+                return;
+            }
         }
         if (shape) {
             shape.castShadow = true;
@@ -788,8 +823,8 @@ export class GlViewer {
 
 
         center.y = point.y;
-        RayCast.setFromCamera({ x: 0, y: 0 }, this.camera);
-        newAngle = this.toV2({ x: 0, y: 0 }, { x: RayCast.ray.direction.x, y: RayCast.ray.direction.z });
+        RayCast.setFromCamera({x: 0, y: 0}, this.camera);
+        newAngle = this.toV2({x: 0, y: 0}, {x: RayCast.ray.direction.x, y: RayCast.ray.direction.z});
         curentRotationInRad = ((-Math.PI / 2 + -newAngle) + (Math.PI * 2)) % (Math.PI * 2);
         nRotation = (curentRotationInRad + ((Math.PI / 180) * rotation));
         _X = center.x + radius * Math.sin(nRotation);
@@ -810,14 +845,13 @@ export class GlViewer {
     }
 
 
-
     move(arg) {
         let _self = this,
             controls = this.controls;
         if (!this.move.isFinish) return;
         this.refresh();
         let duration = arg.duration || 900,
-            tween = new TWEEN.Tween({ delta: 0 }).to({ delta: 1 }, duration)
+            tween = new TWEEN.Tween({delta: 0}).to({delta: 1}, duration)
                 .easing(TWEEN.Easing.Exponential.In)
                 .onStart(() => {
                     controls.enabled = this.move.isFinish = /*this.personControls.enabled = */false;
@@ -835,15 +869,15 @@ export class GlViewer {
                     if (arg.onComplete) arg.onComplete();
                 })
                 .start()
-            ;
+        ;
 
     }
-
 
 
     render() {
         //if (Pace.running) return;
         this.controls.update();
+        this._cubeCamera.update();
         TWEEN.update();
         //this.gl.toneMappingExposure = Math.pow( 0.9, 4.0 );
 
@@ -880,6 +914,7 @@ export class GlViewer {
         }
     }
 }
+
 /**
  * @class animations viewver controller
  */

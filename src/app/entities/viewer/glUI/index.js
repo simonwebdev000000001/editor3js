@@ -45,6 +45,7 @@ export default class GlUi {
                     <h3>Controls Help</h3>
                     <ul>
                         <li>Double Click to reset camera view in the middle of chamber</li> 
+                        <li>"Del" - delete selected parts</li> 
                         <li>Click on model to add to transform, second time clicking on same model will 
                         remove it from transform, click somewhere on scen will deselect all</li>
                         <li>Arrows Left and Right translate on X, Top and Down translate on Z, 
@@ -161,7 +162,7 @@ export default class GlUi {
             for (let i = 0; i < exportBtns.length; i++) {
                 exportBtns[i].addEventListener('click', function (e) {
                     e.preventDefault();
-                    parent.exportToStl();
+                    parent.exportToStl(e);
                 })
             }
             for (let i = 0; i < checkboxButtons.length; i++) {

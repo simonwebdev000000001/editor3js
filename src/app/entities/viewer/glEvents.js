@@ -1,9 +1,10 @@
-import { GlViewer } from "./glViewer.js";
-import { GLMain } from "./glMain.js";
+import {GlViewer} from "./glViewer.js";
+import {GLMain} from "./glMain.js";
 import GUtils from "../utils";
 
 
 import BoxControls from './controls/box';
+
 /**
  * @class events for canvas viewver and some events for buttons
  * */
@@ -41,9 +42,13 @@ export class MEvents extends GLMain {
         }
 
 
+        handler(this.EVENTS_NAME.DRAG_OVER, (e) => this.onDragOver(e));
+        handler(this.EVENTS_NAME.DRAG_OUT, (e) => this.onDragOut(e));
+        handler(this.EVENTS_NAME.DRAG_END, (e) => this.onDrop(e));
+
         handler(this.EVENTS_NAME.DB_CLICK, (e) => this.onDbClick(e));
         handler(this.EVENTS_NAME.SELECT_START, this.Utils.Config.onEventPrevent);
-        handler(this.EVENTS_NAME.DRAG.DROP, (e) => this.onDrop(e));
+        // handler(this.EVENTS_NAME.DRAG.DROP, (e) => this.onDrop(e));
         handler(this.EVENTS_NAME.DRAG.OVER, this.Utils.Config.onEventPrevent);
         handler(this.EVENTS_NAME.FULLSCREEN.WEB_KIT, (e) => this.onfullscreenchange(e));
         handler(this.EVENTS_NAME.FULLSCREEN.MOZ, (e) => this.onfullscreenchange(e));
@@ -52,7 +57,7 @@ export class MEvents extends GLMain {
 
 
         this.events_storage = [
-            { elem: window, eventName: this.EVENTS_NAME.RESIZE, callback: () => this.onWindowResize() },
+            {elem: window, eventName: this.EVENTS_NAME.RESIZE, callback: () => this.onWindowResize()},
             {
                 elem: window, eventName: this.EVENTS_NAME.KEY.DOWN, callback: (e) => this.onKeyDown(e)
             },
@@ -69,7 +74,37 @@ export class MEvents extends GLMain {
     }
 
 
+    onDragOver(ev) {
+        if (!this.main.gl.domElement.parentNode.className.match('dragover')) {
+            this.main.gl.domElement.parentNode.className += ' dragover';
+        }
+        return this.Utils.Config.onEventPrevent(ev, true);
+    }
 
+    onDragOut(ev) {
+        this.main.gl.domElement.parentNode.className = this.main.gl.domElement.parentNode.className.replace(' dragover', "");
+        return this.Utils.Config.onEventPrevent(ev, true);
+    }
+
+    onDrop(ev) {
+        this.main.gl.domElement.parentNode.className = this.main.gl.domElement.parentNode.className.replace(' dragover', "");
+        let _files = ev.dataTransfer.items;
+        if (_files) {
+            for (var i = 0; i < _files.length; i++) {
+                if (_files[i].kind === 'file') {
+                    var file = _files[i].getAsFile();
+                    this.main.loadStlFile(URL.createObjectURL(file), file.name);
+                }
+            }
+        } else {
+            for (var i = 0; i < _files.length; i++) {
+                let file = _files[i];
+                this.main.loadStlFile(URL.createObjectURL(file), file.name);
+            }
+        }
+
+        return this.Utils.Config.onEventPrevent(ev, true);
+    }
 
     onDestroy() {
         while (this.events_storage.length) {
@@ -78,6 +113,7 @@ export class MEvents extends GLMain {
             handler(ev.eventName, ev.callback);
         }
     }
+
     onKeyUp(event) {
         let _self = this,
             main = this.main,
@@ -100,11 +136,17 @@ export class MEvents extends GLMain {
             case 16: // SHIFT
                 main.controls.enabled = true;
                 break;
-            case 46: // Del
-                if (main._datGui) main._datGui.deleteSelected();
+                // case 46: { // Del
+                //     if (main._datGui) {
+                //         if (confirm('Are you sure you want to delete these files?')) {
+                //             main._datGui.deleteSelected();
+                //         }
+                //     }
+                // }
                 break;
         }
     }
+
     onKeyDown(event) {
 
         let _self = this,
@@ -134,27 +176,30 @@ export class MEvents extends GLMain {
         }
         switch (event.keyCode) {
 
-            case 46: {//Del 
-                if (control && control.tempParent) {
+            case 46: {//Del
+                if (confirm('Are you sure you want to delete these files?')) {
+                    if (control && control.tempParent) {
 
-                    for (let i = 0; i < control.tempParent.children.length; i++) {
-                        let child = control.tempParent.children[i];
-                        if (child._control) { 
-                            child._control.remove();
-                        } else {
-                            control.tempParent.remove(child);
+                        for (let i = 0; i < control.tempParent.children.length; i++) {
+                            let child = control.tempParent.children[i];
+                            if (child._control) {
+                                child._control.remove();
+                            } else {
+                                control.tempParent.remove(child);
+                            }
+                            i--;
                         }
-                        i--;  
+                        control.detach();
+                        control.parent.remove(control);
+                        control.tempParent.parent.remove(control.tempParent);
+                        control.tempParent = null;
+                        return this.Utils.Config.onEventPrevent(event, true);
                     }
-                    control.detach();
-                    control.parent.remove(control);
-                    control.tempParent.parent.remove(control.tempParent);
-                    control.tempParent = null;
-                    return this.Utils.Config.onEventPrevent(event, true);
                 }
+
                 break;
             }
-            case 37: {//Left 
+            case 37: {//Left
                 if (control && control.tempParent) {
                     control.tempParent.position.x -= GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE;
                     return this.Utils.Config.onEventPrevent(event, true);
@@ -182,15 +227,14 @@ export class MEvents extends GLMain {
                 }
                 break;
             }
-            case 27:
-                {
-                    if (main.transformControls.object) {
-                        let transformControls = main.transformControls;
-                        transformControls.detach();
-                        main.scene.remove(transformControls);
-                    }
-                    break;
-                } // ESC
+            case 27: {
+                if (main.transformControls.object) {
+                    let transformControls = main.transformControls;
+                    transformControls.detach();
+                    main.scene.remove(transformControls);
+                }
+                break;
+            } // ESC
 
             case 81: // Q
                 if (main.transformControls) {
@@ -293,20 +337,6 @@ export class MEvents extends GLMain {
         link.click();
     }
 
-    onDrop(e) {
-        this.Utils.Config.onEventPrevent(e);
-        if (!this.curDrag || !this.curDrag.pattern) throw Error('nothing drag was selected');
-        let opt = this.curDrag,
-            data = opt.pattern;
-
-        this.onSelected(e, (intersects) => {
-            if (intersects.length) {
-
-            }
-        });
-    }
-
-
 
     deselectFromControls(child) {
         // child.parent.updateMatrixWorld();
@@ -314,8 +344,9 @@ export class MEvents extends GLMain {
         // child.updateMatrixWorld();
         // child.material = child._material;
         // THREE.SceneUtils.detach(child, child.parent, child._orParent);
-        child._control.toggleSelect(false,child.parent, child._orParent)
+        child._control.toggleSelect(false, child.parent, child._orParent)
     }
+
     onTransformModel(object, shouldKeepleftitems, _parent) {
         let main = this.main,
             transformControls = main.transformControls,
@@ -355,9 +386,6 @@ export class MEvents extends GLMain {
         }
 
 
-
-
-
         let tempStore = new THREE.Object3D();
         if (!transformControls.tempParent) {
             transformControls.tempParent = new THREE.Object3D();
@@ -372,7 +400,7 @@ export class MEvents extends GLMain {
         })
 
         if (transformControls.tempParent._box) transformControls.tempParent._box.remove();
-        transformControls.tempParent._box = new BoxControls({ tempStore, viewer: this.main });
+        transformControls.tempParent._box = new BoxControls({tempStore, viewer: this.main});
 
 
         let items = [transformControls.tempParent._box.controls, ...listOfmodels];
@@ -383,9 +411,9 @@ export class MEvents extends GLMain {
 
         transformControls.tempParent.updateMatrixWorld();
         items.forEach((el) => {
-            if(el._control){
-                el._control.toggleSelect(true,tempStore, transformControls.tempParent);
-            }else{
+            if (el._control) {
+                el._control.toggleSelect(true, tempStore, transformControls.tempParent);
+            } else {
                 el.updateMatrixWorld();
                 el.material = main.model._selectedMaterial.clone();
                 THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
@@ -400,13 +428,14 @@ export class MEvents extends GLMain {
             endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
             direction = endPoint.clone().sub(center).normalize(),
             dist = endPoint.distanceTo(center);
-        transformControls.position.copy(this.main.scene.position).addScaledVector(direction,dist);
+        transformControls.position.copy(this.main.scene.position).addScaledVector(direction, dist);
 
 
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;
         })
     }
+
     onMouseUp(ev, acc) {
         this.main.controls.enabled = true;
         document.body.style.cursor = '';
@@ -469,6 +498,7 @@ export class MEvents extends GLMain {
             });
         }
     }
+
     onMouseMove(ev) {
         let noMouseDown = !this.mouse.down,
             _el = this._lastSelectedMesh,
@@ -560,6 +590,7 @@ export class MEvents extends GLMain {
 
         callback(intersectList);
     }
+
     onMouseOut(ev) {
         if (this.mouse.down) this.onMouseUp(ev);
     }
@@ -640,7 +671,7 @@ export class MEvents extends GLMain {
 
     inter(ev, arg = null) {
         var _self = this,
-            elements = arg && arg.childs ? arg.childs : [_self.main.model];
+            elements = arg && arg.childs ? arg.childs : _self.main.model.children;
 
         if (!elements) return false;
         if (arg && arg.position) {
@@ -656,6 +687,7 @@ export class MEvents extends GLMain {
         return _self.raycaster.intersectObjects(elements, true);
     }
 }
+
 export class MMouse {
 
     constructor(main) {
@@ -670,7 +702,7 @@ export class MMouse {
             canvasH = _slider.clientHeight,
             _x = (ev ? (ev.touches ? ev.touches[0].pageX : ev.clientX) : canvasW / 2) - rect.left,
             _y = (ev ? (ev.touches ? ev.touches[0].pageY : ev.clientY) : canvasH / 2) - rect.top
-            ;
+        ;
 
         //if (ev && ev.touches) {
         //    let firstFing = ev.touches.length ? ev.touches[0] : ev.changedTouches[0];
@@ -698,6 +730,7 @@ export class MMouse {
         };
     }
 }
+
 export class MAnimation {
 
     constructor(main) {

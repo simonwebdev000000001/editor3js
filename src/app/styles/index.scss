@@ -6,12 +6,20 @@
   width: 100%;
   height: 100%;
   left: 0;
-  text-align: 0;
+  //text-align: 0;
   top: 0;
+  &.dragover{
+    border: 1px dashed gray;
+    opacity: 0.3;
+  }
   canvas {
     position: absolute;
-    left: 0;
-    top: 0;
+
+    &.main-viewer{
+      left: 0;
+      top: 0;
+
+    }
   }
   .abs {
     position: absolute;

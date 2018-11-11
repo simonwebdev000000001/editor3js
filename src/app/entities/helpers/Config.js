@@ -107,7 +107,10 @@ Config.EVENTS_NAME = {
     MOUSE_OUT: 'mouseout',
     MOUSE_DOWN: 'mousedown',
     MOUSE_MOVE: 'mousemove',
-    MOUSE_UP: 'mouseup'
+    MOUSE_UP: 'mouseup',
+    DRAG_OVER: 'dragover',
+    DRAG_OUT: 'dragleave',
+    DRAG_END: 'drop'
 };
 Config.ACCES_ORIGIN = {
     EMPTY: '',
