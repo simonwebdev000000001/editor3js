@@ -327,7 +327,6 @@ export class MEvents extends GLMain {
         //     transformControls.lastSelected._box.parent.remove(transformControls.lastSelected._box);
         // }
 
-
         transformControls.lastSelected = object;
         if (transformControls.tempParent) {
             transformControls.tempParent.updateMatrixWorld();
@@ -396,6 +395,14 @@ export class MEvents extends GLMain {
 
         transformControls.attach(transformControls.tempParent);
         this.main.scene.add(transformControls);
+
+        let center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
+            endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
+            direction = endPoint.clone().sub(center).normalize(),
+            dist = endPoint.distanceTo(center);
+        transformControls.position.copy(this.main.scene.position).addScaledVector(direction,dist);
+
+
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;
         })

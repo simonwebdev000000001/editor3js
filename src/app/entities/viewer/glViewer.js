@@ -99,7 +99,7 @@ export class GlViewer {
         let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
             _type = parseInt(this.materialType);
 
-        this.model._selectedMaterial = new THREE.MeshPhongMaterial({ color: '#87d2dd' });
+        this.model._selectedMaterial = new THREE.MeshPhongMaterial({ color: GUtils.COLORS.SELECTED });
         switch (_type) {
             case 1: {
                 _m.wireframe = true;
@@ -414,16 +414,18 @@ export class GlViewer {
             ]
 
 
+        let  dist = Math.max(GUtils.CHAMPER.DEFAULT / 5,0.5),
+        minScale=-Infinity;
         axises.forEach((el) => {
             let _points = [...el.points],
-                dist = Math.max(GUtils.CHAMPER.DEFAULT / 5,0.5),
+
                 scaleL = el.size/GUtils.CHAMPER.DEFAULT,
                 direction = _points[1].clone();
             _points[1] = _points[0].clone().addScaledVector(direction, dist);
-
+            minScale = Math.max(minScale,scaleL);
             let
                 curve = new THREE.CatmullRomCurve3(_points),
-                size = dist*0.05,
+                size = dist*0.02,
                 conusHeight = 10 * size,
                 geometry = new THREE.TubeBufferGeometry(curve, 10, size, 10, true),
                 material = new THREE.MeshPhongMaterial({
@@ -452,6 +454,11 @@ export class GlViewer {
             axisLbels.add(sp);
         })
 
+        let centerAxes = new THREE.Mesh(new THREE.SphereBufferGeometry(dist*0.03,36,36), new THREE.MeshPhongMaterial({
+            color: 0xffffff
+        }));
+        centerAxes.scale.multiplyScalar(minScale);
+        axes.add(centerAxes);
         helper.add(axes);
         helper.add(axisLbels);
 

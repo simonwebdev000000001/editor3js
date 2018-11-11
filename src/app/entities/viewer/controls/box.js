@@ -3,6 +3,7 @@ import GUtils from '../../utils'
 export default class BoxControls {
     constructor({tempStore, viewer}) {
         this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
+        this.controls.geometry.computeBoundingBox();
         this.controls._tempStore = tempStore;
         this.viewer = viewer;
         this._addBoxLines();
@@ -84,6 +85,28 @@ export default class BoxControls {
         this.viewer.scene.add(tempLabelStore);
 
 
+        //add temp floor
+        let {boundingBox} = this.controls.geometry;
+
+        this._tempFloor = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(
+                boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.max.x, boundingBox.min.y, boundingBox.min.z)),
+                boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.min.y, boundingBox.max.z)),
+                1
+            ),
+            new THREE.MeshPhongMaterial(
+                {
+                    color: GUtils.COLORS.SELECTED,
+                    transparent: true,
+                    opacity: 0.3
+                }
+            )
+        );
+        this._tempFloor.rotation.x = -Math.PI / 2;
+        this.viewer.scene.add(this._tempFloor);
+        this._tempFloor.position.copy(this.viewer.transformControls.worldPositionStart);
+        this._tempFloor.position.y -= (boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.max.y, boundingBox.min.z))) / 2;
+
         //init All boxhelpers
         this.viewer.transformControls.tempParent.traverse((child) => {
             if (child.isIntersectable) {
@@ -100,11 +123,16 @@ export default class BoxControls {
             if (child._category == GUtils.CATEGORIES.STL_LOADED_PART) {
                 child._control.onCollisioin(false);
             }
-        })
+        });
+        this._tempFloor.parent.remove(this._tempFloor);
+        this._tempFloor = null;
     }
 
     onChangeTranslate(pst1, pst2) {
-        if (!this._tempLabelStore) return
+        if (!this._tempLabelStore) return;
+
+        pst1 = pst1.clone().add(this.viewer.transformControls.position);
+        pst2 = pst2.clone().add(this.viewer.transformControls.position);
         this._tempLabelStore.position.copy(GUtils.getPointInBetweenByPerc(pst1, pst2));
         let pst = this.viewer.toScreenPosition(this._tempLabelStore);
         this._tempLabelStore.labelTranslateContainer.style.left = `${pst.x}px`;
@@ -116,7 +144,7 @@ export default class BoxControls {
 
     checkCollision() {
         if (!this.viewer.transformControls.tempParent) return;
-        let indexes = [],collisions={};
+        let indexes = [], collisions = {};
         this.viewer.transformControls.tempParent.traverse((child) => {
             if (child._category == GUtils.CATEGORIES.STL_LOADED_PART) {
 
@@ -133,8 +161,8 @@ export default class BoxControls {
 
                         let isInCollision = vector.distanceTo(_vector) < dist;
                         if (isInCollision) {
-                            collisions[mesh.uuid]= true;
-                            collisions[child.uuid]= true;
+                            collisions[mesh.uuid] = true;
+                            collisions[child.uuid] = true;
                         }
                         child._control.onCollisioin(collisions[child.uuid]);
                         mesh._control.onCollisioin(collisions[mesh.uuid]);
