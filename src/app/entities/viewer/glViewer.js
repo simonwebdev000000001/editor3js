@@ -119,10 +119,13 @@ export class GlViewer {
 
     updateMaterials() {
         this.lights.visible = false;
-        let _m = this.model._curMaterial = new THREE.MeshBasicMaterial(),
+        let _m = this.model._curMaterial = new THREE.MeshBasicMaterial({side: THREE.BackSide}),
             _type = parseInt(this.materialType);
 
-        this.model._selectedMaterial = new THREE.MeshPhongMaterial({color: GUtils.COLORS.SELECTED});
+        this.model._selectedMaterial = new THREE.MeshPhongMaterial({
+            color: GUtils.COLORS.SELECTED,
+            side: THREE.BackSide
+        });
         switch (_type) {
             case 1: {
                 _m.wireframe = true;
@@ -130,7 +133,7 @@ export class GlViewer {
             }
             case 3: {
                 this.lights.visible = true;
-                _m = this.model._curMaterial = new THREE.MeshPhongMaterial();
+                _m = this.model._curMaterial = new THREE.MeshPhongMaterial({side: THREE.BackSide});
                 break;
             }
         }
@@ -271,12 +274,14 @@ export class GlViewer {
         //this.anisotropy = renderer.getMaxAnisotropy();
         this.glcontainer.appendChild(renderer.domElement);
 
+
         let camera = this.camera = new THREE.PerspectiveCamera(45, this._W() / this._H, 1, 2000);
         this.camera.positionDef = new THREE.Vector3(
             GUtils.CHAMPER.WIDTH * 2,
             GUtils.CHAMPER.WIDTH * 0.5,
             GUtils.CHAMPER.WIDTH * 2
         );
+        camera.up = new THREE.Vector3(0, 0, 1);
         this.camera.position.copy(this.camera.positionDef);
         this.camera.lookAt(this.scene.position);
         this.camera.updateProjectionMatrix();
@@ -337,7 +342,7 @@ export class GlViewer {
         this.applyBoxChamber();
         // floor.castShadow = floor.recieveShadow = true;
         // floor.rotation.x = Math.PI / 2;
-        //scene.add(floor);
+        scene.add(new THREE.AxisHelper(100));
 
 
     }
@@ -382,7 +387,7 @@ export class GlViewer {
                     ]
                 },
                 {
-                    color: GUtils.COLORS.BLUE,
+                    color: GUtils.COLORS.GREEN,
                     scale: 'x',
                     points: [
                         new THREE.Vector3(0, 0, -size / 2),
@@ -393,17 +398,19 @@ export class GlViewer {
 
         gridHelper.scale.x = GUtils.CHAMPER.WIDTH / size;
         gridHelper.scale.z = GUtils.CHAMPER.DEPTH / size;
+        gridHelper.rotation.x = Math.PI / 2;
         gridHelper.position.set(
             (GUtils.CHAMPER.WIDTH / 2),
-            0,
-            (GUtils.CHAMPER.DEPTH / 2)
+            (GUtils.CHAMPER.DEPTH / 2),
+            0
         );
         middleLines.forEach((el) => {
             let
                 curve = new THREE.CatmullRomCurve3(el.points),
                 geometry = new THREE.TubeBufferGeometry(curve, 10, 1, 10, false),
                 material = new THREE.MeshPhongMaterial({
-                    color: el.color
+                    color: el.color,
+                    side: THREE.BackSide
                 }),
                 scale = 0.2,
                 mesh = new THREE.Mesh(geometry, new THREE.LineBasicMaterial({
@@ -434,6 +441,7 @@ export class GlViewer {
                     ],
                     size: GUtils.CHAMPER.HEIGHT,
                     color: GUtils.COLORS.GREEN,
+                    vector3: new THREE.Vector3(-1, 0, 0),
                 },
                 {
                     points: [
@@ -441,7 +449,7 @@ export class GlViewer {
                         new THREE.Vector3(0, 0, 1)
                     ],
                     size: GUtils.CHAMPER.DEPTH,
-                    vector3: new THREE.Vector3(-1, 0, 0),
+                    // vector3: new THREE.Vector3(-1, 0, 0),
                     quaternion: new THREE.Vector3(1, 0, 0),
                     color: GUtils.COLORS.BLUE
                 },
@@ -451,7 +459,7 @@ export class GlViewer {
                         new THREE.Vector3(1, 0, 0)
                     ],
                     size: GUtils.CHAMPER.WIDTH,
-                    vector3: new THREE.Vector3(0, 0, -1),
+                    vector3: new THREE.Vector3(0, -1, 0),
                     quaternion: new THREE.Vector3(0, 0, -1),
                     color: GUtils.COLORS.RED
                 }

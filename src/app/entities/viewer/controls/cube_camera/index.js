@@ -12,6 +12,7 @@ export default class CubeCameraView {
             camera = this.camera = new THREE.PerspectiveCamera(45, size / size, 0.1, 200),
             cube = this.cube = new THREE.Object3D();
 
+        camera.up = new THREE.Vector3(0,0,1);
         this.camera.updateProjectionMatrix();
         renderer.sortObjects = false;
         renderer.setSize(size, size);
@@ -33,6 +34,7 @@ export default class CubeCameraView {
         this._addLights();
 
         scene.add(cube);
+        scene.rotation.x = Math.PI/2;
         this.scene.add(helper);
         this._events = new CubeEvents(this);
     }
@@ -98,14 +100,14 @@ export default class CubeCameraView {
                     ]
                 },
                 {
-                    title: 'Front',
+                    title: 'Back',
                     position: new THREE.Vector3(1, 0, 0),
                     rotation: [
                         new THREE.Vector3(0, 1, 0)
                     ]
                 },
                 {
-                    title: 'Back',
+                    title: 'Front',
                     position: new THREE.Vector3(-1, 0, 0),
                     rotation: [
                         new THREE.Vector3(0, -1, 0)

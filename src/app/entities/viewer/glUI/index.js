@@ -76,11 +76,11 @@ export default class GlUi {
                         <input type="number" min="1" data-chamber="WIDTH" value="${GUtils.CHAMPER.WIDTH}"/>
                     </div>
                     <div class="d-flex s-b ">
-                        <span>Y(height)</span>
+                        <span>Y(depth)</span>
                         <input type="number" min="1"data-chamber="HEIGHT" value="${GUtils.CHAMPER.HEIGHT}"/>
                     </div>
                     <div class="d-flex s-b ">
-                        <span>Z(depth)</span>
+                        <span>Z(height)</span>
                         <input type="number" min="1"data-chamber="DEPTH" value="${GUtils.CHAMPER.DEPTH}"/>
                     </div>
                  </fieldset>

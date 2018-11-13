@@ -200,10 +200,10 @@ THREE.STLLoader.prototype = {
 							var vertexstart = start + i * 12;
 
 							vertices.push(reader.getFloat32(vertexstart, true));
-							vertices.push(reader.getFloat32(vertexstart + 4, true));
 							vertices.push(reader.getFloat32(vertexstart + 8, true));
+							vertices.push(reader.getFloat32(vertexstart + 4, true));
 
-							normals.push(normalX, normalY, normalZ);
+							normals.push(normalX, normalZ, normalY);
 
 							if (hasColors) {
 
@@ -259,15 +259,15 @@ THREE.STLLoader.prototype = {
 				while ((result = patternNormal.exec(text)) !== null) {
 
 					normal.x = parseFloat(result[1]);
-					normal.y = parseFloat(result[2]);
-					normal.z = parseFloat(result[3]);
+					normal.y = parseFloat(result[3]);
+					normal.z = parseFloat(result[2]);
 					normalCountPerFace++;
 
 				}
 
 				while ((result = patternVertex.exec(text)) !== null) {
 
-					vertices.push(parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]));
+					vertices.push(parseFloat(result[1]), parseFloat(result[3]), parseFloat(result[2]));
 					normals.push(normal.x, normal.y, normal.z);
 					vertexCountPerFace++;
 
