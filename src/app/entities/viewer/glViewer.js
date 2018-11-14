@@ -304,7 +304,7 @@ export class GlViewer {
         //controls.zoomSpeed = 0.87;
         //if (isMobile) controls.zoomSpeed = 1;
         controls.enableKeys = false
-        controls.maxPolarAngle = Math.PI * 0.461;
+        // controls.maxPolarAngle = Math.PI * 0.461;
         controls.addEventListener('change', (e) => {
             this.refresh();
             this.scene.traverse((child) => {
@@ -342,7 +342,7 @@ export class GlViewer {
         this.applyBoxChamber();
         // floor.castShadow = floor.recieveShadow = true;
         // floor.rotation.x = Math.PI / 2;
-        scene.add(new THREE.AxisHelper(100));
+        // scene.add(new THREE.AxisHelper(100));
 
 
     }
@@ -379,7 +379,7 @@ export class GlViewer {
             gridMiddleHelper = new THREE.Object3D(),
             middleLines = [
                 {
-                    color: GUtils.COLORS.RED,
+                    color: GUtils.COLORS.GREEN,
                     scale: 'z',
                     points: [
                         new THREE.Vector3(-size / 2, 0, 0),
@@ -387,7 +387,7 @@ export class GlViewer {
                     ]
                 },
                 {
-                    color: GUtils.COLORS.GREEN,
+                    color: GUtils.COLORS.BLUE,
                     scale: 'x',
                     points: [
                         new THREE.Vector3(0, 0, -size / 2),
@@ -440,7 +440,7 @@ export class GlViewer {
                         new THREE.Vector3(0, 1, 0)
                     ],
                     size: GUtils.CHAMPER.HEIGHT,
-                    color: GUtils.COLORS.GREEN,
+                    color: GUtils.COLORS.BLUE,
                     vector3: new THREE.Vector3(-1, 0, 0),
                 },
                 {
@@ -451,7 +451,7 @@ export class GlViewer {
                     size: GUtils.CHAMPER.DEPTH,
                     // vector3: new THREE.Vector3(-1, 0, 0),
                     quaternion: new THREE.Vector3(1, 0, 0),
-                    color: GUtils.COLORS.BLUE
+                    color: GUtils.COLORS.RED
                 },
                 {
                     points: [
@@ -461,7 +461,7 @@ export class GlViewer {
                     size: GUtils.CHAMPER.WIDTH,
                     vector3: new THREE.Vector3(0, -1, 0),
                     quaternion: new THREE.Vector3(0, 0, -1),
-                    color: GUtils.COLORS.RED
+                    color: GUtils.COLORS.GREEN
                 }
             ]
 

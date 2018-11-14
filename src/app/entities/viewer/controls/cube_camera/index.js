@@ -12,7 +12,7 @@ export default class CubeCameraView {
             camera = this.camera = new THREE.PerspectiveCamera(45, size / size, 0.1, 200),
             cube = this.cube = new THREE.Object3D();
 
-        camera.up = new THREE.Vector3(0,0,1);
+        camera.up = new THREE.Vector3(0, 0, 1);
         this.camera.updateProjectionMatrix();
         renderer.sortObjects = false;
         renderer.setSize(size, size);
@@ -34,7 +34,8 @@ export default class CubeCameraView {
         this._addLights();
 
         scene.add(cube);
-        scene.rotation.x = Math.PI/2;
+
+        scene.add(new THREE.AxisHelper(2));
         this.scene.add(helper);
         this._events = new CubeEvents(this);
     }
@@ -67,8 +68,8 @@ export default class CubeCameraView {
     }
 
     _initCube() {
-        let
-            self = this,
+        let edges = [];
+        if (this.camera.up.y) {
             edges = [
                 {
                     title: 'Top',
@@ -113,47 +114,106 @@ export default class CubeCameraView {
                         new THREE.Vector3(0, -1, 0)
                     ]
                 }
-            ].forEach(((eddge) => {
-                let plane = new THREE.PlaneBufferGeometry(1, 1, 1),
-                    materiial = new THREE.MeshPhongMaterial({
-                        map: this._drawTexture({text: eddge.title})
-                    }),
-                    cubeEdge = new THREE.Mesh(plane, materiial);
-                cubeEdge.scale.multiplyScalar(2);
-                this.cube.add(cubeEdge);
-                if (eddge.rotation) {
-
-                    while (eddge.rotation.length) {
-                        let quaternion = new THREE.Quaternion();
-                        quaternion.setFromAxisAngle(eddge.rotation.shift(), eddge.angle || Math.PI / 2);
-                        cubeEdge.quaternion.multiply(quaternion);
-                    }
-
+            ];
+        } else if (this.camera.up.z) {
+            // this.scene.rotation.x = Math.PI/2;
+            edges = [
+                {
+                    title: 'Top',
+                    position: new THREE.Vector3(0, 0, 1),
+                    rotation: [
+                        // new THREE.Vector3(-1, 0, 0),
+                        new THREE.Vector3(0, 0, 1)
+                    ]
+                },
+                {
+                    title: 'Bottom',
+                    position: new THREE.Vector3(0, 0, -1),
+                    angle: [Math.PI, Math.PI / 2],
+                    rotation: [
+                        new THREE.Vector3(1, 0, 0),
+                        new THREE.Vector3(0, 0, -1)
+                    ]
+                },
+                {
+                    title: 'Left',
+                    position: new THREE.Vector3(1,0, 0),
+                    // angle: [Math.PI, Math.PI / 2],
+                    rotation: [
+                        new THREE.Vector3(0, 1, 0),
+                        new THREE.Vector3(0, 0, 1)
+                    ]
+                },
+                {
+                    title: 'Right',
+                    position: new THREE.Vector3(-1, 0, 0),
+                    // angle: Math.PI,
+                    rotation: [
+                        new THREE.Vector3(0, -1, 0),
+                        new THREE.Vector3(0, 0, -1)
+                    ]
+                },
+                {
+                    title: 'Back',
+                    position: new THREE.Vector3(0, -1, 0),
+                    rotation: [
+                        new THREE.Vector3(1,0,  0),
+                    ]
+                },
+                {
+                    title: 'Front',
+                    position: new THREE.Vector3(0,1, 0),
+                    angle: [ Math.PI / 2,Math.PI],
+                    rotation: [
+                        new THREE.Vector3(-1,0,  0),
+                        new THREE.Vector3(0, 0, 1)
+                    ]
                 }
-                cubeEdge._edge = eddge;
-                cubeEdge.position.copy(eddge.position);
-                cubeEdge._category = CubeCameraView.CATEGORES.EDGE;
-                cubeEdge.isIntersectable = true;
-                cubeEdge._mouseover = function (e) {
-                    if (!this.material.defColor) {
-                        this.material.defColor = this.material.color.clone()
-                    }
-                    if (!this.isHovered) {
-                        this.material.color.addScalar(0.25);
-                    }
+            ]
+        }
+        let
+            self = this;
+        edges.forEach(((eddge) => {
+            let plane = new THREE.PlaneBufferGeometry(1, 1, 1),
+                materiial = new THREE.MeshPhongMaterial({
+                    map: this._drawTexture({text: eddge.title})
+                }),
+                cubeEdge = new THREE.Mesh(plane, materiial);
+            cubeEdge.scale.multiplyScalar(2);
+            this.cube.add(cubeEdge);
+            if (eddge.rotation) {
 
-                    this.isHovered = true;
-                }
-                cubeEdge._mouseout = function (e) {
-                    this.material.color = this.material.defColor.clone();
-                    this.isHovered = false;
-                }
-                cubeEdge._mouseup = function (e) {
-                    cubeEdge._mouseout();
-                    self.onSelectView(this._edge);
+                while (eddge.rotation.length) {
+                    let quaternion = new THREE.Quaternion();
+                    quaternion.setFromAxisAngle(eddge.rotation.shift(), eddge.angle ? (Array.isArray(eddge.angle) ? eddge.angle.shift() : eddge.angle) : Math.PI / 2);
+                    cubeEdge.quaternion.multiply(quaternion);
                 }
 
-            }))
+            }
+            cubeEdge._edge = eddge;
+            cubeEdge.position.copy(eddge.position);
+            cubeEdge._category = CubeCameraView.CATEGORES.EDGE;
+            cubeEdge.isIntersectable = true;
+            cubeEdge._mouseover = function (e) {
+                if (!this.material.defColor) {
+                    this.material.defColor = this.material.color.clone()
+                }
+                if (!this.isHovered) {
+                    this.material.color.addScalar(0.25);
+                }
+
+                this.isHovered = true;
+            }
+            cubeEdge._mouseout = function (e) {
+                this.material.color = this.material.defColor.clone();
+                this.isHovered = false;
+            }
+            cubeEdge._mouseup = function (e) {
+                cubeEdge._mouseout();
+                self.onSelectView(this._edge);
+            }
+
+        }))
     }
 
     static CATEGORES = {
@@ -185,7 +245,7 @@ export default class CubeCameraView {
 
     onSelectView(view) {
         this.camera.position.copy(this.controls.target.clone().addScaledVector(view.position, this.camera.position.distanceTo(this.controls.target)));
-        if(this.onChangeView)this.onChangeView(view);
+        if (this.onChangeView) this.onChangeView(view);
     }
 }
 
