@@ -950,6 +950,11 @@ export class GlViewer {
         this.gl.render(this.scene, this.camera);
         // }
 
+        // if(this.transformControls._box){
+        //     this.transformControls.gizmo['translate'].children.traverse((child)=>{
+        //         child.scale.set(10,1,1);
+        //     });
+        // }
     }
 
     dispoce() {

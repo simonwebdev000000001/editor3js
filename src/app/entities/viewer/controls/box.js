@@ -6,6 +6,13 @@ export default class BoxControls {
         this.controls.geometry.computeBoundingBox();
         this.controls._tempStore = tempStore;
         this.viewer = viewer;
+        let v1 = this.controls.geometry.boundingBox.min,
+            v2 = this.controls.geometry.boundingBox.max;
+        viewer.transformControls.children[0].boundingBoxMesh = {
+            _width: v1.distanceTo(new THREE.Vector3(v2.x, v1.y, v1.z)),
+            _depth: v1.distanceTo(new THREE.Vector3(v1.x, v2.y, v1.z)),
+            _height: v1.distanceTo(new THREE.Vector3(v1.x, v1.y, v2.z))
+        }
         this._addBoxLines();
     }
 
