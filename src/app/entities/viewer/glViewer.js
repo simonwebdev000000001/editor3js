@@ -68,13 +68,31 @@ export class GlViewer {
         this._events = new MEvents(this);
         this.container.appendChild(this._cubeCamera.renderer.domElement);
 
-        this._cubeCamera.onChangeView = (view) => {
+        this._cubeCamera.controls.addEventListener('change', () => {
+            if (this.noUpdateCamera) return
+            this.controls.autoRotate = false;
+            let vector = new THREE.Vector3();
+            this._cubeCamera.camera.getWorldDirection(vector);
+            vector.z *= -1;
+            this.camera.position.copy(this.controls.target.clone().addScaledVector(vector, this.camera.position.distanceTo(this.controls.target)));
+        });
+        this.controls.addEventListener('change', () => {
+            if (this.noUpdateCamera) return;
+            this.controls.autoRotate = false;
+            let vector = new THREE.Vector3();
+            this.camera.getWorldDirection(vector);
+            vector.z *= -1;
+            this._cubeCamera.camera.position.copy(this._cubeCamera.controls.target.clone().addScaledVector(vector, this._cubeCamera.camera.position.distanceTo(this._cubeCamera.controls.target)));
+        });
+
+        this._cubeCamera.onChangeView = async (view) => {
+            this.noUpdateCamera = true;
             let cameraPst = this.camera.position,
                 target = this.controls.target,
-                newPst = target.clone().addScaledVector(view.position, cameraPst.distanceTo(target));
+                newPst = target.clone().addScaledVector(view.positionView || view.position, cameraPst.distanceTo(target));
 
             this.controls.autoRotate = false;
-            this.move({
+            await this.move({
                 onStart: () => {
                     this.controls.enabled = true;
                     this.refresh();
@@ -89,6 +107,7 @@ export class GlViewer {
                     }
                 }]
             });
+            this.noUpdateCamera = false;
         }
         this.zoomCamera();
         // this._transformUI = new TransformControls(this);
@@ -375,7 +394,8 @@ export class GlViewer {
 
         let size = GUtils.CHAMPER.DEFAULT,
             divisions = 10,
-            gridHelper = this.chamber.gridHelper = new THREE.GridHelper(size, divisions, 0x444444, GUtils.COLORS.GRAY),
+            gridHelper = this.chamber.gridHelper = new THREE.Object3D(),
+            _grid = new THREE.GridHelper(size, divisions, 0x444444, GUtils.COLORS.GRAY),
             gridMiddleHelper = new THREE.Object3D(),
             middleLines = [
                 {
@@ -397,13 +417,45 @@ export class GlViewer {
             ];
 
         gridHelper.scale.x = GUtils.CHAMPER.WIDTH / size;
-        gridHelper.scale.z = GUtils.CHAMPER.DEPTH / size;
+        gridHelper.scale.z = GUtils.CHAMPER.HEIGHT / size;
         gridHelper.rotation.x = Math.PI / 2;
         gridHelper.position.set(
             (GUtils.CHAMPER.WIDTH / 2),
-            (GUtils.CHAMPER.DEPTH / 2),
+            (GUtils.CHAMPER.HEIGHT / 2),
             0
         );
+
+        let cellSize = Math.round(size / divisions),
+            gridCells = new THREE.Object3D();
+        gridHelper.add(_grid);
+        gridHelper.add(gridCells);
+        gridCells.rotation.x = -Math.PI / 2;
+        // gridCells.position.set(
+        //     (-(GUtils.CHAMPER.WIDTH / 2) + (cellSize* gridHelper.scale.x / 2)),
+        //     0,
+        //     ((GUtils.CHAMPER.HEIGHT / 2) - cellSize*gridHelper.scale.z / 2) ,
+        // );
+        for (let i = -divisions/2; i < divisions/2; i++) {
+            for (let j = -divisions/2; j < divisions/2; j++) {
+                // if () {
+                    let plane = new THREE.Mesh(
+                        new THREE.PlaneBufferGeometry(cellSize, cellSize),
+                        new THREE.MeshBasicMaterial({
+                            color: (i + j) % 2 == 0?GUtils.COLORS.GRAY_CELL:GUtils.COLORS.BACKGROUND,
+                            side:THREE.DoubleSide
+                        })
+                    );
+                    gridCells.add(plane);
+                    plane.position.set(
+                        i * (cellSize  )+cellSize/2,
+                        j * (cellSize  )+cellSize/2,
+                        0
+                    )
+                // }
+
+            }
+        }
+
         middleLines.forEach((el) => {
             let
                 curve = new THREE.CatmullRomCurve3(el.points),
@@ -854,30 +906,33 @@ export class GlViewer {
 
 
     move(arg) {
-        let _self = this,
-            controls = this.controls;
-        if (!this.move.isFinish) return;
-        this.refresh();
-        let duration = arg.duration || 900,
-            tween = new TWEEN.Tween({delta: 0}).to({delta: 1}, duration)
-                .easing(TWEEN.Easing.Exponential.In)
-                .onStart(() => {
-                    controls.enabled = this.move.isFinish = /*this.personControls.enabled = */false;
-                    if (arg.onStart) arg.onStart();
-                })
-                .onUpdate(function (delta) {
-                    for (let i = 0, list = arg.list || arg; i < list.length; i++) {
-                        list[i].onUpdate(this.delta);
-                    }
-                })
-                .onComplete(() => {
-                    this.move.isFinish = controls.enabled = true;
-                    tween.stop();
-                    tween = null;
-                    if (arg.onComplete) arg.onComplete();
-                })
-                .start()
-        ;
+        return new Promise((resolve) => {
+            let _self = this,
+                controls = this.controls;
+            if (!this.move.isFinish) return;
+            this.refresh();
+            let duration = arg.duration || 900,
+                tween = new TWEEN.Tween({delta: 0}).to({delta: 1}, duration)
+                    .easing(TWEEN.Easing.Exponential.In)
+                    .onStart(() => {
+                        controls.enabled = this.move.isFinish = /*this.personControls.enabled = */false;
+                        if (arg.onStart) arg.onStart();
+                    })
+                    .onUpdate(function (delta) {
+                        for (let i = 0, list = arg.list || arg; i < list.length; i++) {
+                            list[i].onUpdate(this.delta);
+                        }
+                    })
+                    .onComplete(() => {
+                        this.move.isFinish = controls.enabled = true;
+                        tween.stop();
+                        tween = null;
+                        if (arg.onComplete) arg.onComplete();
+                        resolve();
+                    })
+                    .start();
+        })
+
 
     }
 

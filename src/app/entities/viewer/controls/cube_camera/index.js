@@ -35,7 +35,7 @@ export default class CubeCameraView {
 
         scene.add(cube);
 
-        scene.add(new THREE.AxisHelper(2));
+        // scene.add(new THREE.AxisHelper(2));
         this.scene.add(helper);
         this._events = new CubeEvents(this);
     }
@@ -137,8 +137,8 @@ export default class CubeCameraView {
                 },
                 {
                     title: 'Left',
-                    position: new THREE.Vector3(1,0, 0),
-                    // angle: [Math.PI, Math.PI / 2],
+                    position: new THREE.Vector3(1, 0, 0),
+                    positionView: new THREE.Vector3(-1, 0, 0),
                     rotation: [
                         new THREE.Vector3(0, 1, 0),
                         new THREE.Vector3(0, 0, 1)
@@ -147,7 +147,7 @@ export default class CubeCameraView {
                 {
                     title: 'Right',
                     position: new THREE.Vector3(-1, 0, 0),
-                    // angle: Math.PI,
+                    positionView: new THREE.Vector3(1, 0, 0),
                     rotation: [
                         new THREE.Vector3(0, -1, 0),
                         new THREE.Vector3(0, 0, -1)
@@ -156,16 +156,18 @@ export default class CubeCameraView {
                 {
                     title: 'Back',
                     position: new THREE.Vector3(0, -1, 0),
+                    positionView: new THREE.Vector3(0, 1, 0),
                     rotation: [
-                        new THREE.Vector3(1,0,  0),
+                        new THREE.Vector3(1, 0, 0),
                     ]
                 },
                 {
                     title: 'Front',
-                    position: new THREE.Vector3(0,1, 0),
-                    angle: [ Math.PI / 2,Math.PI],
+                    position: new THREE.Vector3(0, 1, 0),
+                    positionView: new THREE.Vector3(0, -1, 0),
+                    angle: [Math.PI / 2, Math.PI],
                     rotation: [
-                        new THREE.Vector3(-1,0,  0),
+                        new THREE.Vector3(-1, 0, 0),
                         new THREE.Vector3(0, 0, 1)
                     ]
                 }
@@ -243,9 +245,9 @@ export default class CubeCameraView {
 
     }
 
-    onSelectView(view) {
+    async onSelectView(view) {
         this.camera.position.copy(this.controls.target.clone().addScaledVector(view.position, this.camera.position.distanceTo(this.controls.target)));
-        if (this.onChangeView) this.onChangeView(view);
+        if (this.onChangeView) await this.onChangeView(view);
     }
 }
 
