@@ -1,10 +1,33 @@
+
 .uni-glui {
+  opacity: 0.1;
+  &:hover{
+    opacity: 1;
+  }
   width: 290px;
   form {
-    max-height: 50vh;
+    max-height: 100vh;
     overflow: auto;
     input {
       max-width: 50%;
     }
+    fieldset{
+      *{
+        margin: 0;
+      }
+      .field-desc{
+        cursor: pointer;
+      }
+      .fields-list{
+        //display: none;
+      }
+      &:hover{
+        .fields-list{
+          display: inherit;
+        }
+      }
+
+    }
+
   }
 }

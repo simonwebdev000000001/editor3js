@@ -275,6 +275,7 @@ export class GlViewer {
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();
+        this.model.dragParts = [];
         this.model.name = 'model' + Date.now();
         this.scene.add(this.model);
         this.updateRender({
@@ -337,10 +338,11 @@ export class GlViewer {
 
         transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
         transformControls.addEventListener('mouseDown', (...e) => {
-
+            dragControls.enabled = false;
             transformControls.tempParent._box.onStartTranslate();
         });
         transformControls.addEventListener('mouseUp', () => {
+            dragControls.enabled = true;
             transformControls.tempParent._box.onEndTranslate();
         });
         transformControls.addEventListener('change', () => {
@@ -357,6 +359,21 @@ export class GlViewer {
             controls.enabled = !event.value;
         });
 
+        let dragControls = this.dragControls = new THREE.DragControls([], camera, renderer.domElement, this);
+        dragControls.addEventListener('dragstart', function () {
+
+            controls.enabled = transformControls.enabled = false;
+
+        });
+        dragControls.addEventListener('dragend', function () {
+
+            controls.enabled = transformControls.enabled = true;
+
+        });
+        dragControls.addEventListener('drag', function () {
+
+
+        });
         this.addLights();
         this.applyBoxChamber();
         // floor.castShadow = floor.recieveShadow = true;
@@ -435,22 +452,22 @@ export class GlViewer {
         //     0,
         //     ((GUtils.CHAMPER.HEIGHT / 2) - cellSize*gridHelper.scale.z / 2) ,
         // );
-        for (let i = -divisions/2; i < divisions/2; i++) {
-            for (let j = -divisions/2; j < divisions/2; j++) {
+        for (let i = -divisions / 2; i < divisions / 2; i++) {
+            for (let j = -divisions / 2; j < divisions / 2; j++) {
                 // if () {
-                    let plane = new THREE.Mesh(
-                        new THREE.PlaneBufferGeometry(cellSize, cellSize),
-                        new THREE.MeshBasicMaterial({
-                            color: (i + j) % 2 == 0?GUtils.COLORS.GRAY_CELL:GUtils.COLORS.BACKGROUND,
-                            side:THREE.DoubleSide
-                        })
-                    );
-                    gridCells.add(plane);
-                    plane.position.set(
-                        i * (cellSize  )+cellSize/2,
-                        j * (cellSize  )+cellSize/2,
-                        0
-                    )
+                let plane = new THREE.Mesh(
+                    new THREE.PlaneBufferGeometry(cellSize, cellSize),
+                    new THREE.MeshBasicMaterial({
+                        color: (i + j) % 2 == 0 ? GUtils.COLORS.GRAY_CELL : GUtils.COLORS.BACKGROUND,
+                        side: THREE.DoubleSide
+                    })
+                );
+                gridCells.add(plane);
+                plane.position.set(
+                    i * (cellSize) + cellSize / 2,
+                    j * (cellSize) + cellSize / 2,
+                    0
+                )
                 // }
 
             }

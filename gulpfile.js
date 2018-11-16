@@ -115,7 +115,7 @@ gulp.task('js:build', function () {
             gulp.src(paths + "threejs/three.js"),
             // gulp.src(paths + "threejs/RGBELoader.js"),
             // gulp.src(paths + "threejs/HDRCubeTextureLoader.js"),
-            gulp.src(paths + "dat.gui.min.js"),
+            // gulp.src(paths + "dat.gui.min.js"),
             gulp.src(paths + "threejs/STLLoader.js"),
             gulp.src(paths + "threejs/BufferGeometryUtils.js"),
             // gulp.src(paths + "fabric.min.js"),
@@ -129,6 +129,7 @@ gulp.task('js:build', function () {
             // gulp.src(paths + "threejs/env/SkyShader.js"),
             gulp.src(paths + "threejs/OOrbitControls.js"),
             gulp.src(paths + "threejs/TransformControls.js"),
+            gulp.src(paths + "threejs/DragControls.js"),
             // gulp.src(paths + "threejs/OBJLoader.js"),
             // gulp.src(paths + "rs/Matrix4x4.js"),
             // gulp.src(paths + "threejs/normal/extern/blob.js"),
@@ -184,7 +185,7 @@ gulp.task('js:build', function () {
             // gulp.src(paths + "ripple.min.js"),
 
 
-            gulp.src("bower_components/stackblur-canvas/dist/stackblur.js")
+            // gulp.src("bower_components/stackblur-canvas/dist/stackblur.js")
 
 
         )

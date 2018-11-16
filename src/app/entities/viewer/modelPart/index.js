@@ -12,6 +12,9 @@ export default class ModelPart {
         mesh.name = name;
 
         mesh._control = this;
+        if (viewer._ui) {
+            viewer._ui.onLoadPart(mesh);
+        }
         this._addLabelPositin();
         this.toggleViewLabel();
         this.updateLabel();
@@ -20,8 +23,10 @@ export default class ModelPart {
 
     remove() {
         this.mesh.parent.remove(this.mesh);
+
         this.labelContainer.innerHTML = "";
         this.labelContainer.parentNode.removeChild(this.labelContainer);
+        if (this.mesh._onHtmlDeletePart) this.mesh._onHtmlDeletePart();
     }
 
     checkIfColision() {
@@ -109,6 +114,8 @@ export default class ModelPart {
         let el = this.mesh,
             child = el;
 
+        el.isSelected = isSelect;
+        if (el._onHtmlSelectPart) el._onHtmlSelectPart();
         if (isSelect) {
 
             el.updateMatrixWorld();

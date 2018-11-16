@@ -123,7 +123,7 @@ export default class CubeCameraView {
                     position: new THREE.Vector3(0, 0, 1),
                     rotation: [
                         // new THREE.Vector3(-1, 0, 0),
-                        new THREE.Vector3(0, 0, 1)
+                        // new THREE.Vector3(0, 0, 1)
                     ]
                 },
                 {
@@ -132,7 +132,7 @@ export default class CubeCameraView {
                     angle: [Math.PI, Math.PI / 2],
                     rotation: [
                         new THREE.Vector3(1, 0, 0),
-                        new THREE.Vector3(0, 0, -1)
+                        // new THREE.Vector3(0, 0, -1)
                     ]
                 },
                 {

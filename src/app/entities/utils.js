@@ -55,6 +55,16 @@ export default class GUtils {
             text: 'mm'
         }
     }
+    static onEventPrevent(event, shouldStopPropogation) {
+        event.preventDefault();
+        if (shouldStopPropogation) event.stopPropagation();
+        return false;
+    }
+    static XMLtoHTNL(stringXML){
+        let tempDiv = document.createElement('div');
+        tempDiv.innerHTML = stringXML;
+        return tempDiv.children[0];
+    }
     static getPointInBetweenByPerc(pointA, pointB, percentage=0.5) {
 
         var dir = pointB.clone().sub(pointA);

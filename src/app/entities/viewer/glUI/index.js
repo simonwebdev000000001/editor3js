@@ -10,7 +10,7 @@ export default class GlUi {
 
         (function init() {
 
-            let fileContainer = document.createElement('div'),
+            let fileContainer = self.container = document.createElement('div'),
                 _self = parent,
                 container = _self.container;
 
@@ -18,32 +18,42 @@ export default class GlUi {
             fileContainer.innerHTML = `
            
             <form action="" class="" style="background:white">
-                <input type="file" name="myFile" accept=".stl" multiple>
+                <input type="file" name="myFile"  class="fullWidth"accept=".stl" multiple>
                  <fieldset id="group1">
-                    <h3>Main Settings</h3>
-                    <div class="d-flex s-b ">
-                        <input type="checkbox" id="setting-1"  data-controls="settings-should_fill"/>
-                        <label for="setting-1">Fill in chamber</label>
+                    <h3 class="field-desc">List of Parts</h3>
+                    <div class="fields-list" id="part_list">
+                        
+                    </div> 
+                </fieldset>  
+                <fieldset id="group1">
+                    <h3 class="field-desc">Main Settings</h3>
+                    <div class="fields-list">
+                        <div class="d-flex s-b">
+                            <input type="checkbox" id="setting-1"  data-controls="settings-should_fill"/>
+                            <label for="setting-1" style="width: 100%">Fill in chamber</label>
+                        </div> 
                     </div> 
                 </fieldset> 
                 <fieldset id="group1">
                     <h3>Controls Settings</h3>
-                    <div class="d-flex s-b ">
-                        <span>Step increments(mm),only for Keyboard</span>
-                        <input type="number" min="0" step="0.5" data-controls="increments-keyboard_translate" value="${GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>Increments Translate(mm)</span>
-                        <input type="number" min="0" step="0.5" data-controls="increments-translate" value="${GUtils.CONTROLS.INCREMENTS.TRANSLATE}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>Increments Rotating(deg)</span>
-                        <input type="number" min="0" step="0.5" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
+                    <div class="fields-list">
+                        <div class="d-flex s-b ">
+                            <span>Step increments(mm),only for Keyboard</span>
+                            <input type="number" min="0" step="0.5" data-controls="increments-keyboard_translate" value="${GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE}"/>
+                        </div>
+                        <div class="d-flex s-b ">
+                            <span>Increments Translate(mm)</span>
+                            <input type="number" min="0" step="0.5" data-controls="increments-translate" value="${GUtils.CONTROLS.INCREMENTS.TRANSLATE}"/>
+                        </div>
+                        <div class="d-flex s-b ">
+                            <span>Increments Rotating(deg)</span>
+                            <input type="number" min="0" step="0.5" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
+                        </div>
                     </div>
                 </fieldset> 
                 <fieldset id="group1">
-                    <h3>Controls Help</h3>
-                    <ul>
+                    <h3 class="field-desc">Controls Help</h3>
+                    <ul class="fields-list">
                         <li>Double Click to reset camera view in the middle of chamber</li> 
                         <li>"Del" - delete selected parts</li> 
                         <li>Click on model to add to transform, second time clicking on same model will 
@@ -59,29 +69,35 @@ export default class GlUi {
                     </ul> 
                 </fieldset> 
                 <fieldset id="group1">
-                    <p>Material</p>
-                    <input type="radio" name="material" value="1" ${_self.materialType == 1 ? 'checked="checked"' : ''} > Wireframe<br>
-                    <input type="radio" name="material" value="2"> Basic<br>
-                    <input type="radio" name="material" value="3" ${_self.materialType == 3 ? 'checked="checked"' : ''}> Phong
+                    <h3>Material</h3>
+                     <div class="fields-list">
+                        <input type="radio" name="material" value="1" ${_self.materialType == 1 ? 'checked="checked"' : ''} > Wireframe<br>
+                        <input type="radio" name="material" value="2"> Basic<br>
+                        <input type="radio" name="material" value="3" ${_self.materialType == 3 ? 'checked="checked"' : ''}> Phong
+                     </div>
                  </fieldset>
                  <fieldset id="group2">
-                    <p>Export STL</p>
-                    <button>binary</button>
-                    <button>ASCII</button>
+                    <h3>Export STL</h3>
+                    <div class="fields-list">
+                        <button>binary</button>
+                        <button>ASCII</button>
+                    </div>
                  </fieldset>
                  <fieldset id="group3">
-                    <p>Edit chamber</p>
-                    <div class="d-flex s-b ">
-                        <span>X(width)</span>
-                        <input type="number" min="1" data-chamber="WIDTH" value="${GUtils.CHAMPER.WIDTH}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>Y(depth)</span>
-                        <input type="number" min="1"data-chamber="HEIGHT" value="${GUtils.CHAMPER.HEIGHT}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>Z(height)</span>
-                        <input type="number" min="1"data-chamber="DEPTH" value="${GUtils.CHAMPER.DEPTH}"/>
+                    <h3>Edit chamber</h3>
+                    <div class="fields-list">
+                        <div class="d-flex s-b ">
+                            <span>X(width)</span>
+                            <input type="number" min="1" data-chamber="WIDTH" value="${GUtils.CHAMPER.WIDTH}"/>
+                        </div>
+                        <div class="d-flex s-b ">
+                            <span>Y(depth)</span>
+                            <input type="number" min="1"data-chamber="HEIGHT" value="${GUtils.CHAMPER.HEIGHT}"/>
+                        </div>
+                        <div class="d-flex s-b ">
+                            <span>Z(height)</span>
+                            <input type="number" min="1"data-chamber="DEPTH" value="${GUtils.CHAMPER.DEPTH}"/>
+                        </div>
                     </div>
                  </fieldset>
                 
@@ -98,19 +114,19 @@ export default class GlUi {
                 for (let i = 0; i < fileList.length; i++) {
                     let file = fileList[i];
                     if (_self.TOTAL_ITEMS_FILE_LOADED++ > GUtils.SETTINGS.MAX_FILE_ITEMS_COUNT) {
-                        return Modals.ALERT().show({ text: 'The total number of files exceeds the maximum for the build view' });
+                        return Modals.ALERT().show({text: 'The total number of files exceeds the maximum for the build view'});
                     }
                     if (_self.TOTAL_FILE_LOADED + file.size >= GUtils.SETTINGS.MAX_TOTAL_FILE_SIZE) {
-                        return Modals.ALERT().show({ text: 'The total size of files exceeds the maximum for the build view' });
+                        return Modals.ALERT().show({text: 'The total size of files exceeds the maximum for the build view'});
                     } else if (file.size >= GUtils.SETTINGS.MAX_SINGE_FILE_SIZE) {
                         haveBigFiles = true;
                         continue;
-                    } 
-                    _self.loadStlFile(URL.createObjectURL(file),file.name);
+                    }
+                    _self.loadStlFile(URL.createObjectURL(file), file.name);
                     _self.TOTAL_FILE_LOADED += file.size;
                 }
                 if (haveBigFiles) {
-                    Modals.ALERT().show({ text: 'Certain file(s) have not been rendered as they are too large' });
+                    Modals.ALERT().show({text: 'Certain file(s) have not been rendered as they are too large'});
                 }
 
                 return;
@@ -169,7 +185,7 @@ export default class GlUi {
                 checkboxButtons[i].addEventListener('change', function (e) {
                     e.preventDefault();
                     switch (e.target.dataset.controls) {
-                        case 'settings-should_fill':{
+                        case 'settings-should_fill': {
                             GUtils.SETTINGS.SHOULD_FILL = e.target.checked;
                             break;
                         }
@@ -223,7 +239,57 @@ export default class GlUi {
                 })
             }
 
+
+            fileContainer.querySelector('#part_list').addEventListener('click', (e) => {
+                let {dataset} = e.target;
+                if (dataset.partDelete) {
+                    parent._events.onDeletePart(self.getMeshByUUID(dataset.partDelete));
+
+                } else if (dataset.partSelect) {
+                    parent._events.onSelectPart(self.getMeshByUUID(dataset.partSelect));
+                }
+                return GUtils.onEventPrevent(e);
+            })
         })()
     }
 
+    getMeshByUUID(meshUID) {
+        let mesh;
+        this.parent.scene.traverse((child) => {
+            if (child.uuid == meshUID) {
+                mesh = child;
+                return false;
+            }
+        });
+        return mesh;
+    }
+
+    onLoadPart(mesh) {
+        let divContainer = `
+        <div class="d-flex f-r s-a">
+                <label class="part-title" data-part-select="${mesh.uuid}">
+                <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
+                <div class="actions">
+                    <button data-part-delete="${mesh.uuid}">
+                     <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
+                    </button>
+                </div>
+        </div>
+        `;
+        mesh._onHtmlDeletePart = function () {
+            divContainer.innerHTML = '';
+            divContainer.parentNode.removeChild(divContainer);
+        }
+        mesh._onHtmlSelectPart = function () {
+            let checkbox = divContainer.querySelector('input[data-part-select]');
+            if(this.isSelected){
+                checkbox.setAttribute('checked',true);
+            }else{
+                checkbox.removeAttribute('checked')
+            }
+
+        }
+        divContainer = GUtils.XMLtoHTNL(divContainer);
+        this.container.querySelector('#part_list').appendChild(divContainer);
+    }
 }

@@ -177,26 +177,8 @@ export class MEvents extends GLMain {
         switch (event.keyCode) {
 
             case 46: {//Del
-                if (confirm('Are you sure you want to delete these files?')) {
-                    if (control && control.tempParent) {
 
-                        for (let i = 0; i < control.tempParent.children.length; i++) {
-                            let child = control.tempParent.children[i];
-                            if (child._control) {
-                                child._control.remove();
-                            } else {
-                                control.tempParent.remove(child);
-                            }
-                            i--;
-                        }
-                        control.detach();
-                        control.parent.remove(control);
-                        control.tempParent.parent.remove(control.tempParent);
-                        control.tempParent = null;
-                        return this.Utils.Config.onEventPrevent(event, true);
-                    }
-                }
-
+                this.onDeleteSelectedPart(event);
                 break;
             }
             case 37: {//Left
@@ -296,6 +278,69 @@ export class MEvents extends GLMain {
         }
     }
 
+    onDeleteSelectedPart(event) {
+        let _self = this,
+            main = this.main,
+            control = main.transformControls;
+        if (confirm('Are you sure you want to delete this part(s)?')) {
+            if (control && control.tempParent) {
+
+                for (let i = 0; i < control.tempParent.children.length; i++) {
+                    let child = control.tempParent.children[i];
+                    if (child._control) {
+                        child._control.remove();
+                    } else {
+                        control.tempParent.remove(child);
+                    }
+                    i--;
+                }
+                control.detach();
+                control.parent.remove(control);
+                control.tempParent.parent.remove(control.tempParent);
+                control.tempParent = null;
+                return this.Utils.Config.onEventPrevent(event, true);
+            }
+        }
+    }
+
+    onDeletePart(mesh) {
+        let _self = this,
+            main = this.main,
+            control = main.transformControls;
+        if (confirm('Are you sure you want to delete part?')) {
+            this.onSelectPart();
+            mesh._control.remove();
+        }
+    }
+
+    onSelectPart(object) {
+        let shouldKeepleftitems = false,
+            transformControls = this.main.transformControls;
+        if (object && transformControls.tempParent) {
+            for (let i = 0; i < transformControls.tempParent.children.length; i++) {
+                let child = transformControls.tempParent.children[i];
+                if (child.uuid == object.uuid) {
+                    this.deselectFromControls(object);
+                    object = null;
+                    shouldKeepleftitems = true;
+                    let items = transformControls.tempParent.children.map((el) => el);
+                    if (items.length > 1) {
+                        this.onTransformModel();
+                        return items.forEach((_child) => {
+                            if (_child.isIntersectable) {
+                                this.onTransformModel(_child);
+                            }
+
+                        })
+                    }
+                    break;
+                }
+            }
+        }
+
+        this.onTransformModel(object);
+    }
+
     onWindowResize(width, height) {
         let app = this.main,
             _w = width || app._W(),
@@ -371,7 +416,9 @@ export class MEvents extends GLMain {
                 }
             }
             transformControls.tempParent.parent.remove(transformControls.tempParent);
+            transformControls.tempStore.parent.remove(transformControls.tempStore);
             transformControls.tempParent = null;
+            transformControls.tempStore = null;
         }
         if (!object) {
             return;
@@ -389,9 +436,13 @@ export class MEvents extends GLMain {
         let tempStore = new THREE.Object3D();
         if (!transformControls.tempParent) {
             transformControls.tempParent = new THREE.Object3D();
+            transformControls.tempStore = new THREE.Object3D();
             transformControls.tempParent.isNew = true;
             transformControls.tempParent._category = GUtils.CATEGORIES.TEMP_TRANSFORM_CONTAINER;
-            object.parent.add(transformControls.tempParent);
+            object.parent.add(transformControls.tempStore);
+            transformControls.tempStore.add(transformControls.tempParent);
+            transformControls.tempStore.add(transformControls);
+            this.main.scene.add(transformControls.tempStore);
 
         }
 
@@ -422,14 +473,13 @@ export class MEvents extends GLMain {
         });
 
         transformControls.attach(transformControls.tempParent);
-        this.main.scene.add(transformControls);
+
 
         let center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
             endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
             direction = endPoint.clone().sub(center).normalize(),
             dist = endPoint.distanceTo(center);
         transformControls.position.copy(this.main.scene.position).addScaledVector(direction, dist);
-
 
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;
@@ -462,6 +512,7 @@ export class MEvents extends GLMain {
 
 
         }
+
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
                 let object,
@@ -472,29 +523,7 @@ export class MEvents extends GLMain {
                     object = (intersects[0]).object;
                     parent = object.parent;
                 }
-                if (object && transformControls.tempParent) {
-                    for (let i = 0; i < transformControls.tempParent.children.length; i++) {
-                        let child = transformControls.tempParent.children[i];
-                        if (child.uuid == object.uuid) {
-                            this.deselectFromControls(object);
-                            object = null;
-                            shouldKeepleftitems = true;
-                            let items = transformControls.tempParent.children.map((el) => el);
-                            if (items.length > 1) {
-                                this.onTransformModel();
-                                return items.forEach((_child) => {
-                                    if (_child.isIntersectable) {
-                                        this.onTransformModel(_child);
-                                    }
-
-                                })
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                this.onTransformModel(object);
+                this.onSelectPart(object);
             });
         }
     }
@@ -518,7 +547,7 @@ export class MEvents extends GLMain {
             }
 
             this.onSelected(ev, (inters) => {
-                document.body.style.cursor = inters.length ? 'pointer' : '';
+                document.body.style.cursor = inters.length ? 'move' : '';
 
                 if (inters && inters.length) {
                     let element = this.lastHovered = inters[0].object;

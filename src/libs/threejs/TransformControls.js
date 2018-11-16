@@ -1069,6 +1069,7 @@ THREE.TransformControlsGizmo = function () {
         handles = handles.concat(this.gizmo[this.mode].children);
         handles = handles.concat(this.helper[this.mode].children);
 
+        console.log(this.gizmo.posiiton);
         for (var i = 0; i < handles.length; i++) {
 
             var handle = handles[i];
@@ -1096,7 +1097,7 @@ THREE.TransformControlsGizmo = function () {
                         break;
                     }
                 }
-                handle.scale.set(1, 1, 1).multiplyScalar(scale);
+                handle.scale.set(1, 1, 1).multiplyScalar(scale*0.5);
             } else {
                 handle.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size / 7);
             }
