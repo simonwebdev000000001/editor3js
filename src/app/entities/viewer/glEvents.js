@@ -244,7 +244,7 @@ export class MEvents extends GLMain {
                 break;
 
             case 69: // E
-                if (main.transformControls) main.transformControls.setMode("rotate");
+                // if (main.transformControls) main.transformControls.setMode("rotate");
                 break;
 
             case 82: // R
@@ -439,10 +439,12 @@ export class MEvents extends GLMain {
             transformControls.tempStore = new THREE.Object3D();
             transformControls.tempParent.isNew = true;
             transformControls.tempParent._category = GUtils.CATEGORIES.TEMP_TRANSFORM_CONTAINER;
+            // object.parent.add(transformControls.tempParent);
             object.parent.add(transformControls.tempStore);
             transformControls.tempStore.add(transformControls.tempParent);
             transformControls.tempStore.add(transformControls);
             this.main.scene.add(transformControls.tempStore);
+            // this.main.scene.add(transformControls);
 
         }
 
@@ -536,6 +538,7 @@ export class MEvents extends GLMain {
 
         this.lastSelectedMesh = this.lastHovered = null;
         this.main.refresh();
+        document.body.style.cursor =   '';
         if (noMouseDown) {
             if (_elH) {
                 switch (_elH._category) {
@@ -547,9 +550,10 @@ export class MEvents extends GLMain {
             }
 
             this.onSelected(ev, (inters) => {
-                document.body.style.cursor = inters.length ? 'move' : '';
+                // document.body.style.cursor = inters.length ? 'move' : '';
 
                 if (inters && inters.length) {
+                    document.body.style.cursor =   'move' ;
                     let element = this.lastHovered = inters[0].object;
                     switch (element._category) {
                         case 2: {
@@ -621,7 +625,7 @@ export class MEvents extends GLMain {
     }
 
     onMouseOut(ev) {
-        if (this.mouse.down) this.onMouseUp(ev);
+        // if (this.mouse.down) this.onMouseUp(ev);
     }
 
     /**
@@ -700,7 +704,7 @@ export class MEvents extends GLMain {
 
     inter(ev, arg = null) {
         var _self = this,
-            elements = arg && arg.childs ? arg.childs : _self.main.model.children;
+            elements = arg && arg.childs ? arg.childs : _self.main.scene.children;
 
         if (!elements) return false;
         if (arg && arg.position) {

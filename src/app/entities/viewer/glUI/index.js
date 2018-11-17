@@ -61,10 +61,7 @@ export default class GlUi {
                         <li>Arrows Left and Right translate on X, Top and Down translate on Z, 
                         Holding Shift and Left or Right translate on Y </li>
                         <li>
-                           
-                        "W" translate | "E" rotate | "R" scale | "+" increase size | "-" decrease size
-                        "Q" toggle world/local space | Hold "Ctrl" down to snap to grid
-                        "X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled
+                        "W" translate , "Q" toggle world/local space 
                         </li>
                     </ul> 
                 </fieldset> 
@@ -247,6 +244,8 @@ export default class GlUi {
 
                 } else if (dataset.partSelect) {
                     parent._events.onSelectPart(self.getMeshByUUID(dataset.partSelect));
+                } else if (dataset.partCopy) {
+                    new DuplicatePart(self.getMeshByUUID(dataset.partCopy))
                 }
                 return GUtils.onEventPrevent(e);
             })
@@ -266,12 +265,15 @@ export default class GlUi {
 
     onLoadPart(mesh) {
         let divContainer = `
-        <div class="d-flex f-r s-a">
+        <div class="d-flex f-r s-b">
                 <label class="part-title" data-part-select="${mesh.uuid}">
                 <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
                 <div class="actions">
                     <button data-part-delete="${mesh.uuid}">
                      <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
+                    </button>
+                    <button data-part-delete="${mesh.uuid}">
+                     <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
                     </button>
                 </div>
         </div>
@@ -282,9 +284,9 @@ export default class GlUi {
         }
         mesh._onHtmlSelectPart = function () {
             let checkbox = divContainer.querySelector('input[data-part-select]');
-            if(this.isSelected){
-                checkbox.setAttribute('checked',true);
-            }else{
+            if (this.isSelected) {
+                checkbox.setAttribute('checked', true);
+            } else {
                 checkbox.removeAttribute('checked')
             }
 
@@ -292,4 +294,84 @@ export default class GlUi {
         divContainer = GUtils.XMLtoHTNL(divContainer);
         this.container.querySelector('#part_list').appendChild(divContainer);
     }
+}
+
+class DuplicatePart {
+    constructor(mesh) {
+        let modal = new (Modals.MODAL())(),
+        spacingDefault = 2*Math.round(mesh._helper.geometry.boundingSphere.radius);
+        modal.content.innerHTML = `
+          <h3>Duplicate</h3>
+          <form action="" class="duplicate-part">
+            <fieldset id="group1">
+                <h3>Count of Copies</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span>
+                        <input type="number" min="0" step="1" data-copy="x" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <input type="number" min="0" step="1" data-copy="y" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <input type="number" min="0" step="1" data-copy="z" value="0"/>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset id="group1">
+                <h3>Minimum distance from</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span>
+                        <input type="number" min="0" step="0.1" data-distance="x" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <input type="number" min="0" step="0.1" data-distance="y" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <input type="number" min="0" step="0.1" data-distance="z" value="0"/>
+                    </div>
+                </div>
+            </fieldset> 
+            <fieldset id="group1">
+                <h3>Spacing between parts(default diameter  of bounding sphere)</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span>
+                        <input type="number" min="0" step="0.1" data-spacing="x" value="${spacingDefault}"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <input type="number" min="0" step="0.1" data-spacing="y" value="${spacingDefault}"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <input type="number" min="0" step="0.1" data-spacing="z" value="${spacingDefault}"/>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+        `;
+
+        modal.onOk = function () {
+            let settings ={};
+            [].forEach.call(modal.content.querySelectorAll('input'), (nodeItem) => {
+                let field = Object.keys(nodeItem.dataset)[0],
+                dimension  = nodeItem.dataset[field];
+                if(!settings[field]){
+                    settings[field]={}
+                }
+                settings[field][dimension] = parseFloat(nodeItem.value);
+
+            })
+
+            this.onClose();
+            mesh._onDublicate(settings);
+        }
+    }
+
 }

@@ -73,6 +73,7 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
 
             if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
 
+                document.body.style.cursor = 'move';
                 _selected.position.copy(_intersection.sub(_offset));
 
             }
@@ -85,9 +86,9 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
 
         _raycaster.setFromCamera(_mouse, _camera);
 
-        var intersects = _raycaster.intersectObjects(_viewer.transformControls.tempStore?_viewer.transformControls.tempStore.children:_objects, true);
+        var intersects = _raycaster.intersectObjects(_viewer.transformControls.tempStore ? _viewer.transformControls.tempStore.children : _objects, true);
 
-        if (intersects.length > 0  && intersects[0].object.isIntersectable) {
+        if (intersects.length > 0 && intersects[0].object.isIntersectable) {
 
             var object = intersects[0].object;
 
@@ -97,7 +98,7 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
 
                 scope.dispatchEvent({type: 'hoveron', object: object});
 
-                _domElement.style.cursor = 'pointer';
+                _domElement.style.cursor = 'move';
                 _hovered = object;
 
             }
@@ -123,13 +124,13 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
 
         _raycaster.setFromCamera(_mouse, _camera);
 
-        if (scope.enabled && _viewer.transformControls.tempStore ) {
+        if (scope.enabled && _viewer.transformControls.tempStore) {
             var intersects = _raycaster.intersectObjects(_viewer.transformControls.tempStore.children, true);
 
             if (intersects.length > 0 && intersects[0].object.isIntersectable) {
 
                 // _selected = intersects[ 0 ].object;
-                _selected = _viewer.transformControls.tempStore;
+                _selected = _viewer.transformControls.object;
 
                 if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
 
@@ -159,7 +160,7 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
 
         }
 
-        _domElement.style.cursor = _hovered ? 'pointer' : 'auto';
+        _domElement.style.cursor = _hovered ? 'move' : 'auto';
 
     }
 

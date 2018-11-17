@@ -290,6 +290,7 @@ THREE.TransformControls = function (camera, domElement) {
 
     this.pointerMove = function (pointer) {
 
+
         var axis = this.axis;
         var mode = this.mode;
         var object = this.object;
@@ -328,17 +329,16 @@ THREE.TransformControls = function (camera, domElement) {
             if (axis.search('Z') === -1) {
                 pointEnd.z = pointStart.z;
             }
-
             // Apply translate
 
             if (space === 'local') {
+
                 object.position.copy(pointEnd).sub(pointStart).applyQuaternion(_quaternionStart);
             } else {
                 object.position.copy(pointEnd).sub(pointStart);
             }
 
             object.position.add(_positionStart);
-
             // Apply translation snap
 
             if (this.translationSnap) {
@@ -420,12 +420,13 @@ THREE.TransformControls = function (camera, domElement) {
             object.scale.copy(_scaleStart).multiply(_tempVector);
 
         } else if (mode === 'rotate') {
-
+            // console.log(pointer,axis);
             var ROTATION_SPEED = 20 / worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 
             var quaternion = this.space === "local" ? worldQuaternion : _identityQuaternion;
 
             var unit = _unit[axis];
+
 
             if (axis === 'E') {
 
@@ -440,7 +441,7 @@ THREE.TransformControls = function (camera, domElement) {
                 rotationAngle = pointEnd.sub(pointStart).dot(_tempVector.cross(eye)) * ROTATION_SPEED;
 
             } else if (axis === 'X' || axis === 'Y' || axis === 'Z') {
-
+                console.log(unit);
                 _alignVector.copy(unit).applyQuaternion(quaternion);
 
                 rotationAxis.copy(unit);
@@ -1069,7 +1070,6 @@ THREE.TransformControlsGizmo = function () {
         handles = handles.concat(this.gizmo[this.mode].children);
         handles = handles.concat(this.helper[this.mode].children);
 
-        console.log(this.gizmo.posiiton);
         for (var i = 0; i < handles.length; i++) {
 
             var handle = handles[i];
@@ -1302,7 +1302,7 @@ THREE.TransformControlsGizmo = function () {
 
                 // Align handles to current local or world rotation
 
-                tempQuaternion2.copy(quaternion);
+               /* tempQuaternion2.copy(quaternion);
                 alignVector.copy(this.eye).applyQuaternion(tempQuaternion.copy(quaternion).inverse());
 
                 if (handle.name.search("E") !== -1) {
@@ -1333,7 +1333,7 @@ THREE.TransformControlsGizmo = function () {
                     tempQuaternion.multiplyQuaternions(tempQuaternion2, tempQuaternion);
                     handle.quaternion.copy(tempQuaternion);
 
-                }
+                }*/
 
             }
 

@@ -68,9 +68,13 @@ export default class BoxControls {
                     vertices[dimension.indexes[j]],
                     vertices[dimension.indexes[j + 1]]
                 );
-                let line = (new BoxEdge({geometry, material, parent: this})).edge;
-                line._category = 2;
-                line.isIntersectable = true;
+                let line = (new BoxEdge({
+                    geometry,
+                    material,
+                    parent: this,
+                    name: dimension.dimension.toUpperCase()
+                })).edge;
+
                 controls.add(line);
             }
 
@@ -98,7 +102,7 @@ export default class BoxControls {
         this._tempFloor = new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
                 boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.max.x, boundingBox.min.y, boundingBox.min.z)),
-                boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.min.y, boundingBox.max.z)),
+                boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.max.y, boundingBox.min.z)),
                 1
             ),
             new THREE.MeshPhongMaterial(
@@ -109,10 +113,10 @@ export default class BoxControls {
                 }
             )
         );
-        this._tempFloor.rotation.x = -Math.PI / 2;
+        // this._tempFloor.rotation.x = -Math.PI / 2;
         this.viewer.scene.add(this._tempFloor);
         this._tempFloor.position.copy(this.viewer.transformControls.worldPositionStart);
-        this._tempFloor.position.y -= (boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.max.y, boundingBox.min.z))) / 2;
+        this._tempFloor.position.z -= (boundingBox.min.distanceTo(new THREE.Vector3(boundingBox.min.x, boundingBox.min.y, boundingBox.max.z))) / 2;
 
         //init All boxhelpers
         this.viewer.transformControls.tempParent.traverse((child) => {
@@ -181,31 +185,71 @@ export default class BoxControls {
 }
 
 export class BoxEdge {
-    constructor({geometry, material, parent}) {
+    constructor({geometry, material, parent, name}) {
         let edge = this.edge = new THREE.Line(geometry, material),
             highLightMat = new THREE.LineBasicMaterial({color: '#ff0000', linewidth: 3}),
             self = this;
+        this.camera = parent.viewer.camera;
         this.controls = parent;
+        this._plane = new THREE.TransformControlsPlane();
+        this.dragging = false;
+        this.axis = null;
+        this.mode = 'rotate';
+        this.rotationSnap = 0;
+        this.space = 'local';
+        this.ray = new THREE.Raycaster();
+        this.cameraPosition = new THREE.Vector3();
+        this.cameraScale = new THREE.Vector3();
+        this.eye = new THREE.Vector3();
+        this.pointEnd = new THREE.Vector3();
+        this.pointStart = new THREE.Vector3();
+        this.rotationAxis = new THREE.Vector3();
+        this._alignVector = new THREE.Vector3();
+        this._tempVector = new THREE.Vector3();
+        this.parentPosition = new THREE.Vector3();
+        this.parentQuaternion = new THREE.Quaternion();
+        this.parentScale = new THREE.Vector3();
+        this.worldScaleStart = new THREE.Vector3();
+        this.worldPositionStart = new THREE.Vector3();
+        this.worldPosition = new THREE.Vector3();
+        this.worldQuaternion = new THREE.Quaternion();
+        this.worldQuaternionStart = new THREE.Quaternion();
+        this._quaternionStart = new THREE.Quaternion();
+        this.cameraQuaternion = new THREE.Quaternion();
+        this._tempQuaternion = new THREE.Quaternion();
+        this.worldScale = new THREE.Vector3();
 
+        this._unit = {
+            X: new THREE.Vector3(-1, 0, 0),
+            Y: new THREE.Vector3(0, -1, 0),
+            Z: new THREE.Vector3(0, 0, 1)
+        }
+
+        edge.name = name;
+        edge._category = 2;
+        edge.isIntersectable = true;
         edge._mousemove = function (ev) {
-            let _parent = this.parent._dimension,
-                vectorRotation = _parent.vectorRotation,
-                lastEv = this.lastEv ? this.lastEv : parent.viewer._events.mouse.down,
-                distX = Math.abs(ev.clientX - lastEv.clientX),
-                distY = Math.abs(ev.clientY - lastEv.clientY),
-                _b = Math.max(distX, distY),
-                _dir = ((_b == distX ? ev.clientX < lastEv.clientX : ev.clientY < lastEv.clientY) ? -1 : 1);
-            if (_b < 5) return;
-            let quaternion = new THREE.Quaternion();
-            if (_parent.dimension != 'y') _dir *= -1;
-            quaternion.setFromAxisAngle(vectorRotation, THREE.Math.degToRad(
-                GUtils.CONTROLS.INCREMENTS.ROTATE
-            ) * _dir);
-            // parent.controls.parent.rotation[_parent.dimension] += 0.1 * _dir;
-            // console.log(parent.controls.rotation)
-            // parent.controls.parent.quaternion.slerp(quaternion, 1);
-            parent.controls.parent.quaternion.multiply(quaternion);
-            this.lastEv = ev;
+            // let _parent = this.parent._dimension,
+            //     vectorRotation = _parent.vectorRotation,
+            //     lastEv = this.lastEv ? this.lastEv : parent.viewer._events.mouse.down,
+            //     distX = Math.abs(ev.clientX - lastEv.clientX),
+            //     distY = Math.abs(ev.clientY - lastEv.clientY),
+            //     _b = Math.max(distX, distY),
+            //     _dir = ((_b == distX ? ev.clientX < lastEv.clientX : ev.clientY < lastEv.clientY) ? -1 : 1);
+            // if (_b < 5) return;
+            // let quaternion = new THREE.Quaternion();
+            // if (_parent.dimension != 'y') _dir *= -1;
+            // quaternion.setFromAxisAngle(vectorRotation, THREE.Math.degToRad(
+            //     GUtils.CONTROLS.INCREMENTS.ROTATE
+            // ) * _dir);
+            // // parent.controls.parent.rotation[_parent.dimension] += 0.1 * _dir;
+            // // console.log(parent.controls.rotation)
+            // // parent.controls.parent.quaternion.slerp(quaternion, 1);
+            // parent.controls.parent.quaternion.multiply(quaternion);
+            // this.lastEv = ev;
+
+
+            self.pointerMove(self.getPointer(ev));
             self.updateRotateLabel();
 
         }
@@ -217,6 +261,9 @@ export class BoxEdge {
             parent.viewer.controls.enabled = parent.viewer.transformControls.enabled = false;
             // edge.material = highLightMat;
             edge.material.color = edge.material._color;
+
+            self.updateMtrix();
+            self.pointerDown(self.getPointer(ev));
             self.initRotateLabel();
         }
         edge._mouseup = function (ev) {
@@ -227,6 +274,7 @@ export class BoxEdge {
             parent.viewer.transformControls.enabled = parent.viewer.transformControls._enabled;
             edge.material.color = edge.material.defcolor;
             self.removeLabels();
+            self.pointerUp();
         }
         edge._mouseover = function (ev) {
             if (!edge.material._color) {
@@ -234,13 +282,202 @@ export class BoxEdge {
                 edge.material.defcolor = edge.material.color;
             }
             edge.material.color = edge.material._color;
+            self.pointerHover(this);
 
         }
         edge._mouseoout = function (ev) {
             edge.material.color = edge.material.defcolor;
+            self.pointerHover();
         }
     }
 
+    rotateObject(){
+        return this.controls.controls.parent
+    }
+    getPointer(event) {
+
+        var pointer = event.changedTouches ? event.changedTouches[0] : event;
+
+        var rect = this.controls.viewer.gl.domElement.getBoundingClientRect();
+
+        return {
+            x: (pointer.clientX - rect.left) / rect.width * 2 - 1,
+            y: -(pointer.clientY - rect.top) / rect.height * 2 + 1,
+            button: event.button
+        };
+
+    }
+
+    updateMtrix() {
+        let object = this.rotateObject(),
+            {
+
+                eye,
+                cameraPosition,
+                cameraQuaternion,
+                cameraScale,
+                parentPosition,
+                worldPosition,
+                worldQuaternion,
+                worldScale,
+                parentScale,
+                parentQuaternion
+            } = this;
+
+
+        object.updateMatrixWorld();
+        object.parent.matrixWorld.decompose(parentPosition, parentQuaternion, parentScale);
+        object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
+
+
+        this.camera.updateMatrixWorld();
+        this.camera.matrixWorld.decompose(cameraPosition, cameraQuaternion, cameraScale);
+        if (this.camera instanceof THREE.PerspectiveCamera) {
+
+            eye.copy(cameraPosition).sub(worldPosition).normalize();
+
+        }
+    }
+
+    pointerUp(pointer) {
+
+
+        this.dragging = false;
+        this.axis = null;
+
+    };
+
+    pointerHover = function (intersect) {
+        this.axis = intersect ? intersect.name : null
+    };
+
+    pointerDown(pointer) {
+        let {
+            axis,
+            ray,
+            _plane,
+            pointStart,
+            pointEnd,
+            rotationAxis,
+            _alignVector,
+            _tempVector,
+            worldPositionStart,
+            worldScaleStart,
+            worldQuaternionStart,
+            _quaternionStart,
+            worldPosition,
+            worldQuaternion,
+            worldScale,
+            parentScale,
+            parentQuaternion
+        } = this;
+        let object = this.rotateObject();
+
+        ray.setFromCamera(pointer, this.camera);
+
+        let planeIntersect = ray.intersectObjects([_plane], true)[0] || false;
+
+        if (planeIntersect) {
+
+            var space = this.space;
+
+            if (space === 'local' && this.mode === 'rotate') {
+
+                var snap = this.rotationSnap;
+
+                // if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
+                // if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
+                // if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
+
+            }
+
+            object.updateMatrixWorld();
+            object.parent.updateMatrixWorld();
+
+            // _positionStart.copy(object.position);
+            _quaternionStart.copy(object.quaternion);
+            // _scaleStart.copy(object.scale);
+
+            object.matrixWorld.decompose(worldPositionStart, worldQuaternionStart, worldScaleStart);
+
+            pointStart.copy(planeIntersect.point).sub(worldPositionStart);
+
+            if (space === 'local') pointStart.applyQuaternion(worldQuaternionStart.clone().inverse());
+
+        }
+
+        this.dragging = true;
+
+    }
+
+    pointerMove(pointer) {
+        let {
+                axis,
+                ray,
+                _plane,
+                pointStart,
+                pointEnd,
+                rotationAxis,
+                _alignVector,
+                _tempVector,
+                worldPositionStart,
+                worldQuaternionStart,
+                eye,
+                _quaternionStart,
+                _tempQuaternion,
+                worldPosition,
+                worldQuaternion,
+                worldScale,
+                parentScale,
+                parentQuaternion
+            } = this,
+            object = this.rotateObject();
+
+
+        ray.setFromCamera(pointer, this.camera);
+
+        var planeIntersect = ray.intersectObjects([_plane], true)[0] || false;
+
+        if (planeIntersect === false) return;
+
+        pointEnd.copy(planeIntersect.point).sub(worldPositionStart);
+
+        pointEnd.applyQuaternion(worldQuaternionStart.clone().inverse());
+
+
+        var unit = this._unit[axis];
+        var quaternion = worldQuaternion;
+        var ROTATION_SPEED = 20 / worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
+
+        if (axis === 'X' || axis === 'Y' || axis === 'Z') {
+            _alignVector.copy(unit).applyQuaternion(quaternion);
+
+            rotationAxis.copy(unit);
+
+            this._tempVector = unit.clone();
+            let _tempVector2 = pointEnd.clone().sub(pointStart);
+
+
+            this._tempVector.applyQuaternion(quaternion);
+            _tempVector2.applyQuaternion(worldQuaternionStart);
+
+            let rotationAngle = this.rotationAngle = _tempVector2.dot(_tempVector.cross(eye).normalize()) * ROTATION_SPEED;
+
+            // Apply rotate
+
+            if (this.space === 'local') {
+
+                object.quaternion.copy(_quaternionStart);
+                object.quaternion.multiply(_tempQuaternion.setFromAxisAngle(rotationAxis, rotationAngle));
+
+            } else {
+
+                object.quaternion.copy(_tempQuaternion.setFromAxisAngle(rotationAxis, rotationAngle));
+                object.quaternion.multiply(_quaternionStart);
+
+            }
+        }
+    }
 
     removeLabels() {
         this.edge._tempLabelStore.parent.remove(this.edge._tempLabelStore);

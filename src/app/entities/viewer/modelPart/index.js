@@ -1,11 +1,12 @@
 import GUtils from "../../utils";
-
+let copies=0;
 export default class ModelPart {
 
     constructor(viewer, {orGeometry, name}) {
         this.viewer = viewer;
         let parent = viewer.model,
             mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial.clone());
+        mesh._helper = new THREE.BoxHelper(mesh);
         mesh.isIntersectable = true;
         mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
@@ -14,6 +15,34 @@ export default class ModelPart {
         mesh._control = this;
         if (viewer._ui) {
             viewer._ui.onLoadPart(mesh);
+        }
+        mesh._onDublicate = function (settings) {
+            let geo = this.geometry.clone(),
+                {distance, copy, spacing} = settings,
+                dim = ['x', 'y', 'z'];
+            geo.translate(distance.x, distance.y, distance.z);
+
+            dim.forEach((dimension) => {
+                for (let i = 0; i < copy[dimension]; i++) {
+                    let geoCopy = geo.clone(),index = i+1;
+                    switch (dimension) {
+                        case dim[0]: {
+                            geoCopy.translate(spacing.x*index, 0, 0);
+                            break;
+                        }
+                        case dim[1]: {
+                            geoCopy.translate(0, spacing.y*index, 0);
+                            break;
+                        }
+                        case dim[2]: {
+                            geoCopy.translate(0, 0, spacing.z*index);
+                            break;
+                        }
+                    }
+                    new ModelPart(viewer, {orGeometry:geoCopy, name:`${mesh.name}(${copies++})`});
+                }
+            })
+
         }
         this._addLabelPositin();
         this.toggleViewLabel();

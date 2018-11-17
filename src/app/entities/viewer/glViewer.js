@@ -337,6 +337,7 @@ export class GlViewer {
 
 
         transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
+        transformControls.setSpace("local");
         transformControls.addEventListener('mouseDown', (...e) => {
             dragControls.enabled = false;
             transformControls.tempParent._box.onStartTranslate();
@@ -349,7 +350,6 @@ export class GlViewer {
             transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
             this.scene.traverse((child) => {
                 if (child._control) {
-
                     child._control.updateLabel();
                     child._control.updateLabelValue();
                 }
@@ -358,7 +358,7 @@ export class GlViewer {
         transformControls.addEventListener('dragging-changed', function (event) {
             controls.enabled = !event.value;
         });
-
+        // let dragControls = this.dragControls ={};
         let dragControls = this.dragControls = new THREE.DragControls([], camera, renderer.domElement, this);
         dragControls.addEventListener('dragstart', function () {
 
@@ -370,9 +370,15 @@ export class GlViewer {
             controls.enabled = transformControls.enabled = true;
 
         });
-        dragControls.addEventListener('drag', function () {
+        dragControls.addEventListener('drag', () => {
 
-
+            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
+            scene.traverse((child) => {
+                if (child._control) {
+                    child._control.updateLabel();
+                    child._control.updateLabelValue();
+                }
+            })
         });
         this.addLights();
         this.applyBoxChamber();

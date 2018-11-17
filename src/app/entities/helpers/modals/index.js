@@ -1,56 +1,84 @@
 class Modal {
     constructor() {
-        let container = this.container = document.createElement('div');
-        container.className = "uni-modals hidden";
-        document.body.appendChild(container);
+        let parent = document.querySelector('.viewer.webgl-view'),
+            parentContainer = this.parentContainer = parent.querySelector('.modals-container');
+        if (!parentContainer) {
+            parentContainer = document.createElement('div');
+            parentContainer.className = 'modals-container';
+            parent.appendChild(parentContainer);
+        }
 
+
+        parentContainer.addEventListener('click', (e) => {
+            if (e.target.className == parentContainer.className || e.target.className == container.className) this.onClose();
+        })
+
+        let container = this.container = document.createElement('div');
+        container.className = "uni-modals";
+        parentContainer.appendChild(container);
+        let modalContainer = this.content = document.createElement('div');
+        container.appendChild(modalContainer);
         let content = this.content = document.createElement('div');
+        modalContainer.className = "modal-container";
         content.className = "content";
-        this.container.appendChild(content);
+        modalContainer.appendChild(content);
 
         let actions = this.actions = document.createElement('div');
         actions.className = "actions";
-        this.container.appendChild(actions);
-        actions.innerHTML = `<button class="uni-btn">Cancel</button>`;
-        actions.querySelector('button').addEventListener('click', (e) => this.onOk());
+        modalContainer.appendChild(actions);
+        actions.innerHTML = `
+            <button class="uni-btn">Cancel</button>
+            <button class="uni-btn" data-on-ok="1">OK</button>
+`;
+        actions.addEventListener('click', (e) => {
+            if (e.target.tagName == 'BUTTON') {
+                if (e.target.dataset.onOk) {
+                    return this.onOk();
+                }
+                this.onClose();
+            }
 
+        });
     }
+
     onOk() {
-        this.container.className = "hidden";
+        this.onClose();
     }
+
+    onClose() {
+        this.container.className = "hidden";
+        this.onDestroy()
+    }
+
     show() {
         this.container.className = this.container.className.replace(/hidden/s, "");
     }
 
     onDestroy() {
-
+        this.container.innerHTML = '';
+        this.container.parentNode.removeChild(this.container);
     }
 }
 
 class AlertModal extends Modal {
     constructor() {
         super();
+        this.container.className = "uni-modals hidden";
     }
 
-    show({ text }) {
+    show({text}) {
         // super.show();
         // this.content.innerHTML = text;
         alert(text);
     }
 }
 
-let modals = {
-    ALERT: null
-}
-document.addEventListener("DOMContentLoaded", function () {
-    modals = {
-        ALERT: new AlertModal()
-    }
-});
-
 
 export default class Modals {
     static ALERT = () => {
-        return modals.ALERT;
+        return new AlertModal();
+    }
+    static MODAL = () => {
+        return Modal
     }
 }
