@@ -2,8 +2,23 @@ import GUtils from '../../utils'
 
 export default class BoxControls {
     constructor({tempStore, viewer}) {
-        this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
-        this.controls.geometry.computeBoundingBox();
+        let countOfItems = tempStore.children.length;
+        if (countOfItems > 1 || 1) {
+            this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
+            this.controls.geometry.computeBoundingBox();
+        } else {
+            let mesh = tempStore.children[0];
+            this.controls = mesh._helper;
+            while (this.controls.children.length) this.controls.remove(this.controls.children[0]);
+            // mesh.updateMatrix();
+            // this.controls.position.copy(mesh.position);
+            // this.controls.quaternion.copy(mesh.quaternion);
+            // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
+            // mesh.matrix.identity();
+            // mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+        }
+
+        // this.controls.parent.radius = this.controls.geometry.boundingSphere.radius;
         this.controls._tempStore = tempStore;
         this.viewer = viewer;
         let v1 = this.controls.geometry.boundingBox.min,
@@ -14,6 +29,38 @@ export default class BoxControls {
             _height: v1.distanceTo(new THREE.Vector3(v1.x, v1.y, v2.z))
         }
         this._addBoxLines();
+        this._addTranslatePivot();
+
+        // if (countOfItems == 1  ) {
+        //     let mesh = tempStore.children[0];
+        //     mesh.updateMatrix();
+        //     // this.controls.position.copy(mesh.position);
+        //     // this.controls.quaternion.copy(mesh.quaternion);
+        //     // this.controls.position.copy(mesh.position);
+        //     // this.controls.quaternion.copy(mesh.quaternion);
+        //     mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
+        //     mesh.matrix.identity();
+        //     mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+        //
+        // }
+    }
+
+    _addTranslatePivot() {
+        let mesh = this._translate_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(10, 1, 1));
+        let meshCenter = this._center_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(10, 1, 1));
+        mesh.visible = false;
+        meshCenter.visible = false;
+        // mesh.scale.multiplyScalar(10);
+        // mesh.scale.multiplyScalar(10);
+        mesh.position.copy(this.controls.geometry.boundingBox.min);
+        meshCenter.position.copy(this.controls.geometry.boundingSphere.center);
+
+        this.viewer.model.updateMatrixWorld();
+        this.controls.updateMatrixWorld();
+        mesh.updateMatrixWorld();
+        THREE.SceneUtils.detach(mesh, this.viewer.model, this.controls);
+        // THREE.SceneUtils.detach(meshCenter, this.viewer.model, this.controls);
+        this.controls.add(meshCenter)
     }
 
     _addBoxLines() {
@@ -182,6 +229,23 @@ export default class BoxControls {
             }
         })
     }
+
+    updateArrowPst() {
+
+        let {transformControls} = this.viewer,
+            center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
+            centerPivot =  new THREE.Vector3(),
+            endPoint = new THREE.Vector3();
+        // this._translate_pivot.parent.updateMatrixWorld();
+        this._center_pivot.parent.updateMatrixWorld();
+        endPoint.setFromMatrixPosition(this._translate_pivot.matrixWorld);
+        centerPivot.setFromMatrixPosition(this._center_pivot.matrixWorld);
+
+        let direction = endPoint.clone().sub(centerPivot).normalize(),
+            dist = endPoint.distanceTo(centerPivot);
+
+        transformControls.position.copy(this.viewer.scene.position).addScaledVector(direction, dist);
+    }
 }
 
 export class BoxEdge {
@@ -220,8 +284,8 @@ export class BoxEdge {
         this.worldScale = new THREE.Vector3();
 
         this._unit = {
-            X: new THREE.Vector3(-1, 0, 0),
-            Y: new THREE.Vector3(0, -1, 0),
+            X: new THREE.Vector3(1, 0, 0),
+            Y: new THREE.Vector3(0, 1, 0),
             Z: new THREE.Vector3(0, 0, 1)
         }
 
@@ -248,7 +312,7 @@ export class BoxEdge {
             // parent.controls.parent.quaternion.multiply(quaternion);
             // this.lastEv = ev;
 
-
+            self.updateMtrix();
             self.pointerMove(self.getPointer(ev));
             self.updateRotateLabel();
 
@@ -291,9 +355,12 @@ export class BoxEdge {
         }
     }
 
-    rotateObject(){
+    rotateObject() {
         return this.controls.controls.parent
+        // return this.controls.viewer.transformControls.object
     }
+
+
     getPointer(event) {
 
         var pointer = event.changedTouches ? event.changedTouches[0] : event;
@@ -381,15 +448,15 @@ export class BoxEdge {
 
             var space = this.space;
 
-            if (space === 'local' && this.mode === 'rotate') {
+            // if (space === 'local' && this.mode === 'rotate') {
+            //
+            //     var snap = this.rotationSnap;
 
-                var snap = this.rotationSnap;
+            // if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
+            // if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
+            // if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
 
-                // if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
-                // if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
-                // if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
-
-            }
+            // }
 
             object.updateMatrixWorld();
             object.parent.updateMatrixWorld();
@@ -447,7 +514,7 @@ export class BoxEdge {
 
         var unit = this._unit[axis];
         var quaternion = worldQuaternion;
-        var ROTATION_SPEED = 20 / worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
+        var ROTATION_SPEED = 0.013257744023014797;//10 / worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 
         if (axis === 'X' || axis === 'Y' || axis === 'Z') {
             _alignVector.copy(unit).applyQuaternion(quaternion);
@@ -476,6 +543,8 @@ export class BoxEdge {
                 object.quaternion.multiply(_quaternionStart);
 
             }
+
+            this.controls.updateArrowPst();
         }
     }
 
@@ -487,32 +556,45 @@ export class BoxEdge {
 
     initRotateLabel() {
         let {parent} = this.edge,
-            helper = new THREE.BoxHelper(parent),
+            // helper = new THREE.BoxHelper(parent),
             {_dimension} = parent,
             tempLabelStore = this.edge._tempLabelStore = new THREE.Object3D(),
-            {radius} = helper.geometry.boundingSphere,
-            geometry = this._updateRingGeo({radius}),
+            transformObject = this.rotateObject(),
+            radius = transformObject.children[0].geometry.boundingSphere.radius,//helper.geometry.boundingSphere,
+            geometry = this._updateRingGeo({radius, dimension: parent._dimension.dimension}),
             material = new THREE.MeshBasicMaterial({color: GUtils.COLORS.RED, side: THREE.DoubleSide}),
             mesh = this.edge._tempLabelStore.ringElement = new THREE.Mesh(geometry, material);
+        // tempLabelStore.position.copy(helper.geometry.boundingSphere.center);
+        // tempLabelStore.quaternion.slerp(transformObject.quaternion, 1);
+        // tempLabelStore.position.copy(transformObject.position);
 
-        tempLabelStore.position.copy(helper.geometry.boundingSphere.center);
-        tempLabelStore.quaternion.slerp(this.controls.viewer.transformControls.tempParent.quaternion, 1);
-        switch (_dimension.dimension) {
-            case 'x': {
-                let quaternion = new THREE.Quaternion();
-                quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-                tempLabelStore.quaternion.slerp(quaternion, 1);
-                break;
-            }
-            case 'y': {
-                let quaternion = new THREE.Quaternion();
-                quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-                tempLabelStore.quaternion.slerp(quaternion, 1);
-                break;
-            }
-        }
+
+        // transformObject.updateMatrix();
+        // transformObject.updateMatrixWorld();
+
+        // transformObject.matrix.decompose(tempLabelStore.position,tempLabelStore.quaternion,tempLabelStore.scale);
+        tempLabelStore.quaternion.slerp(transformObject.quaternion, 1);
+        // switch (_dimension.dimension) {
+        //     case 'x': {
+        //         // let quaternion = new THREE.Quaternion();
+        //         tempLabelStore.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+        //         // tempLabelStore.quaternion.multiply(quaternion);
+        //         break;
+        //     }
+        //     case 'y': {
+        //         // let quaternion = new THREE.Quaternion();
+        //         tempLabelStore.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+        //         // tempLabelStore.quaternion.multiply(quaternion);
+        //         break;
+        //     }
+        // }
+        // tempLabelStore.quaternion.multiply(transformObject.quaternion);
+
+        tempLabelStore.position.copy(transformObject.position);
         tempLabelStore.add(mesh);
-        this.controls.viewer.scene.add(tempLabelStore);
+        // transformObject.add(tempLabelStore);
+        transformObject.parent.add(tempLabelStore);
+        // this.controls.viewer.scene.add(tempLabelStore);
 
         let div = tempLabelStore.labelAngleContainer = document.createElement('div');
         div.className = 'label-container label-transform';
@@ -549,21 +631,53 @@ export class BoxEdge {
         // this.controls 
         let {parent, _tempLabelStore} = this.edge,
             {labelAngleContainer, ringElement} = _tempLabelStore,
-            angleRad = this.controls.viewer.transformControls.tempParent.rotation[parent._dimension.dimension],
+            transformObject = this.rotateObject(),
+            angleRad = transformObject.rotation[parent._dimension.dimension],
             angleDeg = THREE.Math.radToDeg(
                 angleRad
             ),
             angleDegText = angleDeg.toFixed(GUtils.SETTINGS.ROUND);
-        ringElement.geometry = this._updateRingGeo({thetaLength: angleRad / Math.PI * 2});
+
+        // let rotationAxis = new THREE.Vector3();
+        // switch (parent._dimension.dimension) {
+        //     case 'x': {
+        //         rotationAxis = new THREE.Vector3(0, 0, 1);
+        //         break
+        //     }
+        //     case 'y': {
+        //         rotationAxis = new THREE.Vector3(0, 0, 1);
+        //         break
+        //     }
+        //     case 'z': {
+        //         rotationAxis = new THREE.Vector3(0, 0, 1);
+        //         break
+        //     }
+        // }
+        // let startQuaternion = new THREE.Quaternion();
+        // if (!_tempLabelStore.startQuaternion) _tempLabelStore.startQuaternion = _tempLabelStore.quaternion.clone();
+        // _tempLabelStore.quaternion.copy(_tempLabelStore.startQuaternion);
+        // _tempLabelStore.quaternion.multiply(startQuaternion.setFromAxisAngle(rotationAxis, angleRad  ));
+        // _tempLabelStore.quaternion.slerp(_tempLabelStore.quaternion,_tempLabelStore.quaternion.clone().dot(_tempLabelStore.parent.quaternion),_tempLabelStore.quaternion,1)
+        if (parent._dimension.dimension == 'y') angleRad *= -1;
+        ringElement.geometry = this._updateRingGeo({
+            thetaLength: angleRad / Math.PI * 2,
+            dimension: parent._dimension.dimension
+        });
         labelAngleContainer.innerHTML = `<span>${angleDegText}&deg;</span>`;
     }
 
-    _updateRingGeo({radius, thetaLength = 0}) {
+    _updateRingGeo({radius, thetaLength = 0, dimension}) {
         let _rad = radius || this.lastRadius;
         if (_rad) {
             this.lastRadius = _rad;
         }
-        return new THREE.RingBufferGeometry(_rad, _rad + 5, 126, 1, 0, thetaLength)
+        let geo = new THREE.RingBufferGeometry(_rad, _rad + 5, 126, 1, 0, thetaLength);
+        if (dimension == 'x') {
+            geo.rotateY(Math.PI / 2);
+        } else if (dimension == 'y') {
+            geo.rotateX(Math.PI / 2);
+        }
+        return geo
     }
 
 }

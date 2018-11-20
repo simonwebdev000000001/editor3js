@@ -742,8 +742,11 @@ export class GlViewer {
                 }
             } else {
                 let _el = this.createLight(1);
-                this.createLight(4);
-                if (this._datGui) this._datGui.addlight(_el);
+                _el =this.createLight(4);
+                _el.position.y = -1;
+                _el.position.x = -1;
+                  this.createLight(2);
+                // if (this._datGui) this._datGui.addlight(_el);
             }
         } catch (e) {
             let _el = this.createLight(1);
@@ -790,7 +793,7 @@ export class GlViewer {
                 break;
             }
             case 4: {
-                light = new THREE.DirectionalLight(0xffffff, 0.15);
+                light = new THREE.DirectionalLight(0xffffff, 0.05);
                 light.position.set(5, 5, 5);
                 light.shadow.mapSize.width = 1024;
                 light.shadow.mapSize.height = 1024;

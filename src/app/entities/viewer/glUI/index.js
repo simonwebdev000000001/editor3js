@@ -249,6 +249,13 @@ export default class GlUi {
                 }
                 return GUtils.onEventPrevent(e);
             })
+            fileContainer.addEventListener('click', (e) => {
+                if (e.target.tagName == 'H3' && e.target.parentNode.tagName == 'FIELDSET') {
+                    let _q = fileContainer.querySelector('.fields-list.active');
+                    if (_q) _q.className = _q.className.replace(' active', '');
+                    e.target.parentNode.querySelector('.fields-list').className += ' active';
+                }
+            })
         })()
     }
 
@@ -265,19 +272,21 @@ export default class GlUi {
 
     onLoadPart(mesh) {
         let divContainer = `
-        <div class="d-flex f-r s-b">
+        <div class="d-flex f-r s-b part-item-info">
                 <label class="part-title" data-part-select="${mesh.uuid}">
                 <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
                 <div class="actions">
                     <button data-part-delete="${mesh.uuid}">
                      <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
                     </button>
-                    <button data-part-delete="${mesh.uuid}">
+                    <button data-part-copy="${mesh.uuid}">
                      <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
                     </button>
                 </div>
         </div>
         `;
+        divContainer = GUtils.XMLtoHTNL(divContainer);
+        this.container.querySelector('#part_list').appendChild(divContainer);
         mesh._onHtmlDeletePart = function () {
             divContainer.innerHTML = '';
             divContainer.parentNode.removeChild(divContainer);
@@ -291,32 +300,61 @@ export default class GlUi {
             }
 
         }
-        divContainer = GUtils.XMLtoHTNL(divContainer);
-        this.container.querySelector('#part_list').appendChild(divContainer);
+
     }
 }
 
 class DuplicatePart {
     constructor(mesh) {
         let modal = new (Modals.MODAL())(),
-        spacingDefault = 2*Math.round(mesh._helper.geometry.boundingSphere.radius);
+            spacingDefault = 2 * Math.round(mesh._helper.geometry.boundingSphere.radius),
+            _box = mesh._helper.geometry.boundingBox,
+            {height, width, depth} = mesh._boxSize();
         modal.content.innerHTML = `
           <h3>Duplicate</h3>
           <form action="" class="duplicate-part">
             <fieldset id="group1">
-                <h3>Count of Copies</h3>
+                <h3>Quantity </h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <input type="number"  data-quantity="x" disabled value="1"/>
+                    </div> 
+                </div>
+            </fieldset>  
+            <fieldset id="group1">
+                <h3>Inittial position(default position of copy target)</h3>
                 <div class="fields-list">
                     <div class="d-flex s-b ">
                         <span>x</span>
-                        <input type="number" min="0" step="1" data-copy="x" value="0"/>
+                        <input type="number" min="0" step="1" data-position="x" value="${mesh.position.x}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>y</span>
-                        <input type="number" min="0" step="1" data-copy="y" value="0"/>
+                        <input type="number" min="0" step="1" data-position="y" value="${mesh.position.x}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>z</span>
-                        <input type="number" min="0" step="1" data-copy="z" value="0"/>
+                        <input type="number" min="0" step="1" data-position="z" value="${mesh.position.x}"/>
+                    </div>
+                </div>
+            </fieldset> 
+            <fieldset id="group1">
+                <h3>Count of Copies</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span> 
+                        <div class="warning"></div>
+                        <input type="number" min="1" step="1" data-copy="x" value="1"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <div class="warning"></div>
+                        <input type="number" min="1" step="1" data-copy="y" value="1"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <div class="warning"></div>
+                        <input type="number" min="1" step="1" data-copy="z" value="1"/>
                     </div>
                 </div>
             </fieldset>
@@ -342,28 +380,73 @@ class DuplicatePart {
                 <div class="fields-list">
                     <div class="d-flex s-b ">
                         <span>x</span>
-                        <input type="number" min="0" step="0.1" data-spacing="x" value="${spacingDefault}"/>
+                        <input type="number" min="0" step="0.1" data-spacing="x" value="${width}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>y</span>
-                        <input type="number" min="0" step="0.1" data-spacing="y" value="${spacingDefault}"/>
+                        <input type="number" min="0" step="0.1" data-spacing="y" value="${depth}"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>z</span>
-                        <input type="number" min="0" step="0.1" data-spacing="z" value="${spacingDefault}"/>
+                        <input type="number" min="0" step="0.1" data-spacing="z" value="${height}"/>
                     </div>
                 </div>
             </fieldset>
         </form>
         `;
+        [].forEach.call(modal.content.querySelectorAll('input'), (nodeItem) => {
+            nodeItem.addEventListener('input', (e) => {
+                let dimensionCopy = e.target.dataset.copy,
+                    _val = parseFloat(e.target.value),
+                    dimens, distance = 0;
+                switch (dimensionCopy) {
+                    case 'x': {
+                        dimens = 'WIDTH';
+                        distance = width;
+                        break;
+                    }
+                    case 'y': {
+                        dimens = 'DEPTH';
+                        distance = depth;
+                        break;
+                    }
+                    case 'z': {
+                        dimens = 'HEIGHT';
+                        distance = height;
+                        break;
+                    }
+                }
+                if (dimensionCopy) {
+                    let quantity = 1;
+                    [].forEach.call(document.body.querySelectorAll('input[data-copy]'), (el) => {
+                        quantity *= parseInt(el.value);
+                    });
+                    modal.content.querySelector('input[data-quantity]').value = quantity;
 
+                    if ((modal.content.querySelector('input[data-spacing="' + dimensionCopy + '"]').value) * _val + distance * (_val-1) < GUtils.CHAMPER[dimens] || _val === 1) {
+                        let _w = e.target.parentNode.querySelector('.warnings');
+                        if (_w) {
+                            _w.parentNode.removeChild(_w);
+                        }
+                    } else {
+                        if (!e.target.parentNode.querySelector('.warnings')) {
+                            let _d = document.createElement('div');
+                            _d.className = 'warnings';
+                            _d.innerText = 'This number and arrangement of parts will not fit in the build chamber';
+                            e.target.parentNode.querySelector('.warning').appendChild(_d);
+                        }
+
+                    }
+                }
+            })
+        })
         modal.onOk = function () {
-            let settings ={};
+            let settings = {};
             [].forEach.call(modal.content.querySelectorAll('input'), (nodeItem) => {
                 let field = Object.keys(nodeItem.dataset)[0],
-                dimension  = nodeItem.dataset[field];
-                if(!settings[field]){
-                    settings[field]={}
+                    dimension = nodeItem.dataset[field];
+                if (!settings[field]) {
+                    settings[field] = {}
                 }
                 settings[field][dimension] = parseFloat(nodeItem.value);
 

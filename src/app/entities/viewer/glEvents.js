@@ -538,7 +538,7 @@ export class MEvents extends GLMain {
 
         this.lastSelectedMesh = this.lastHovered = null;
         this.main.refresh();
-        document.body.style.cursor =   '';
+        document.body.style.cursor = '';
         if (noMouseDown) {
             if (_elH) {
                 switch (_elH._category) {
@@ -553,11 +553,12 @@ export class MEvents extends GLMain {
                 // document.body.style.cursor = inters.length ? 'move' : '';
 
                 if (inters && inters.length) {
-                    document.body.style.cursor =   'move' ;
+                    document.body.style.cursor = 'move';
                     let element = this.lastHovered = inters[0].object;
                     switch (element._category) {
                         case 2: {
                             element._mouseover(ev);
+
                             break;
                         }
                     }
@@ -568,6 +569,11 @@ export class MEvents extends GLMain {
             switch (_el._category) {
                 case 2: {
                     _el._mousemove(ev);
+                    this.main.scene.traverse((child) => {
+                        if (child._control) {
+                            child._control.updateLabel();
+                        }
+                    })
                     break;
                 }
             }

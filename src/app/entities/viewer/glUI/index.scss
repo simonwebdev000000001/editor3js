@@ -15,18 +15,23 @@
       *{
         margin: 0;
       }
+      h3{
+        cursor: pointer;
+      }
       .field-desc{
         cursor: pointer;
       }
       .fields-list{
-        //display: none;
-      }
-      &:hover{
-        .fields-list{
+        display: none;
+        &.active{
           display: inherit;
         }
+        .part-item-info{
+          input[type="checkbox"]{
+            pointer-events: none;
+          }
+        }
       }
-
     }
 
   }
