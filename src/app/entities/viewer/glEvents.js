@@ -458,9 +458,9 @@ export class MEvents extends GLMain {
 
         let items = [transformControls.tempParent._box.controls, ...listOfmodels];
         transformControls.tempParent.position.copy(
-            transformControls.tempParent._box.controls.geometry.boundingSphere.center
+            transformControls.tempParent._box.controls._center
         );
-
+        // transformControls.tempParent.add(new THREE.AxesHelper(100))
 
         transformControls.tempParent.updateMatrixWorld();
         items.forEach((el) => {
@@ -477,11 +477,11 @@ export class MEvents extends GLMain {
         transformControls.attach(transformControls.tempParent);
 
 
-        let center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
-            endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
-            direction = endPoint.clone().sub(center).normalize(),
-            dist = endPoint.distanceTo(center);
-        transformControls.position.copy(this.main.scene.position).addScaledVector(direction, dist);
+        // let center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
+        //     endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
+        //     direction = endPoint.clone().sub(center).normalize(),
+        //     dist = endPoint.distanceTo(center);
+        // transformControls.position.copy(this.main.scene.position).addScaledVector(direction, dist);
 
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;

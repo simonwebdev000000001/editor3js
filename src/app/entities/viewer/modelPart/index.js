@@ -34,8 +34,10 @@ export default class ModelPart {
             let geo = this.geometry.clone(),
                 {distance, copy, spacing, position} = settings,
                 dim = ['x', 'y', 'z'],
-                {height, width, depth} = this._boxSize();
+                {height, width, depth} = this._boxSize(),
+            translateMin = this._helper.geometry.boundingBox.min.clone().negate();
 
+            geo.translate(translateMin.x, translateMin.y, translateMin.z);
             geo.translate(position.x, position.y, position.z);
             geo.translate(distance.x, distance.y, distance.z);
 
@@ -43,9 +45,9 @@ export default class ModelPart {
             for (let i = 0; i < copy.x; i++) {
                 for (let j = 0; j < copy.z; j++) {
                     for (let k = 0; k < copy.y; k++) {
-                        if (
-                            i == 0 && j == 0 && k == 0
-                        ) continue;
+                        // if (
+                        //     i == 0 && j == 0 && k == 0
+                        // ) continue;
                         let position = new THREE.Vector3(
                             ((i + delta) * width) + spacing.x * (i + delta),
                             ((k + delta) * depth) + spacing.y * (k + delta),
@@ -198,6 +200,8 @@ export default class ModelPart {
             child.updateMatrixWorld();
             child.material = child._material;
             THREE.SceneUtils.detach(child, child.parent, child._orParent);
+            child._helper.last_center = child.position.clone();
+            // child._helper.position.copy(child.position.clone());
         }
 
         this.toggleViewLabel();

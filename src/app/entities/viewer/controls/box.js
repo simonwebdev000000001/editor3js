@@ -3,19 +3,20 @@ import GUtils from '../../utils'
 export default class BoxControls {
     constructor({tempStore, viewer}) {
         let countOfItems = tempStore.children.length;
-        if (countOfItems > 1 || 1) {
+        if (countOfItems > 1||1) {
             this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
             this.controls.geometry.computeBoundingBox();
         } else {
             let mesh = tempStore.children[0];
             this.controls = mesh._helper;
             while (this.controls.children.length) this.controls.remove(this.controls.children[0]);
-            // mesh.updateMatrix();
-            // this.controls.position.copy(mesh.position);
+            mesh.updateMatrix();
+            // this.controls.geometry.translate(mesh.position.x,mesh.position.y,mesh.position.z);
+            this.controls.geometry.computeBoundingSphere();
             // this.controls.quaternion.copy(mesh.quaternion);
             // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
-            // mesh.matrix.identity();
-            // mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+            mesh.matrix.identity();
+            mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
         }
 
         // this.controls.parent.radius = this.controls.geometry.boundingSphere.radius;
@@ -31,18 +32,28 @@ export default class BoxControls {
         this._addBoxLines();
         this._addTranslatePivot();
 
-        // if (countOfItems == 1  ) {
+        this.controls._center = this.controls.geometry.boundingSphere.center;
+        // console.log(this.controls._center);
+        // if (countOfItems == 1) {
         //     let mesh = tempStore.children[0];
         //     mesh.updateMatrix();
         //     // this.controls.position.copy(mesh.position);
         //     // this.controls.quaternion.copy(mesh.quaternion);
         //     // this.controls.position.copy(mesh.position);
         //     // this.controls.quaternion.copy(mesh.quaternion);
-        //     mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
+        //     // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
+        //     // if (this.controls.position.distanceTo(this.viewer.scene.position) == 0) {
+        //     //
+        //     // } else {
+        //     //     if(this.controls.last_center)this.controls._center = this.controls.last_center;
+        //     // }
+        //
         //     mesh.matrix.identity();
         //     mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
         //
         // }
+
+        this.updateArrowPst();
     }
 
     _addTranslatePivot() {
@@ -233,8 +244,8 @@ export default class BoxControls {
     updateArrowPst() {
 
         let {transformControls} = this.viewer,
-            center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
-            centerPivot =  new THREE.Vector3(),
+            // center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
+            centerPivot = new THREE.Vector3(),
             endPoint = new THREE.Vector3();
         // this._translate_pivot.parent.updateMatrixWorld();
         this._center_pivot.parent.updateMatrixWorld();
