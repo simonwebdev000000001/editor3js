@@ -31,6 +31,7 @@ export default class ModelPart {
             }
         }
         mesh._onDublicate = function (settings) {
+            viewer._events._onDeletePart(this);
             let geo = this.geometry.clone(),
                 {distance, copy, spacing, position} = settings,
                 dim = ['x', 'y', 'z'],
@@ -61,7 +62,8 @@ export default class ModelPart {
                         ) continue;
                         let geoCopy = geo.clone();
                         geoCopy.translate(position.x, position.y, position.z);
-                        new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
+                        let _model =new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
+                        this.matrix.decompose(new THREE.Vector3(),_model.mesh.quaternion,_model.mesh.scale);
                     }
                 }
             }

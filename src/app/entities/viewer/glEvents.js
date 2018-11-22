@@ -308,9 +308,12 @@ export class MEvents extends GLMain {
             main = this.main,
             control = main.transformControls;
         if (confirm('Are you sure you want to delete part?')) {
-            this.onSelectPart();
-            mesh._control.remove();
+            this._onDeletePart(mesh);
         }
+    }
+    _onDeletePart(mesh){
+        this.onSelectPart();
+        mesh._control.remove();
     }
 
     onSelectPart(object) {

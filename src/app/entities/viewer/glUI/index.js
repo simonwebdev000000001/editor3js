@@ -313,33 +313,61 @@ class DuplicatePart {
         modal.content.innerHTML = `
           <h3>Duplicate</h3>
           <form action="" class="duplicate-part">
+             
             <fieldset id="group1">
-                <h3>Quantity </h3>
-                <div class="fields-list">
-                    <div class="d-flex s-b ">
-                        <input type="number"  data-quantity="x" disabled value="1"/>
-                    </div> 
-                </div>
-            </fieldset>  
-            <fieldset id="group1">
-                <h3>Inittial position(default position of copy target)</h3>
+                <h3>Position of original</h3>
                 <div class="fields-list">
                     <div class="d-flex s-b ">
                         <span>x</span>
-                        <input type="number" min="0" step="1" data-position="x" value="${mesh.position.x}"/>
+                        <input type="number" min="0" step="1" data-position="x" value="0"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>y</span>
-                        <input type="number" min="0" step="1" data-position="y" value="${mesh.position.x}"/>
+                        <input type="number" min="0" step="1" data-position="y" value="0"/>
                     </div>
                     <div class="d-flex s-b ">
                         <span>z</span>
-                        <input type="number" min="0" step="1" data-position="z" value="${mesh.position.x}"/>
+                        <input type="number" min="0" step="1" data-position="z" value="0"/>
                     </div>
                 </div>
             </fieldset> 
             <fieldset id="group1">
-                <h3>Count of Copies</h3>
+                <h3>Spacing between parts</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span>
+                        <input type="number" min="0" step="0.1" data-spacing="x" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <input type="number" min="0" step="0.1" data-spacing="y" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <input type="number" min="0" step="0.1" data-spacing="z" value="0"/>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset id="group1">
+                <h3>Minimum distance from the boundaries</h3>
+                <div class="fields-list">
+                    <div class="d-flex s-b ">
+                        <span>x</span>
+                        <input type="number" min="0" step="0.1" data-distance="x" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>y</span>
+                        <input type="number" min="0" step="0.1" data-distance="y" value="0"/>
+                    </div>
+                    <div class="d-flex s-b ">
+                        <span>z</span>
+                        <input type="number" min="0" step="0.1" data-distance="z" value="0"/>
+                    </div>
+                </div>
+            </fieldset> 
+            
+            <fieldset id="group1">
+                <h3>Number of parts in each direction</h3>
                 <div class="fields-list">
                     <div class="d-flex s-b ">
                         <span>x</span> 
@@ -358,40 +386,16 @@ class DuplicatePart {
                     </div>
                 </div>
             </fieldset>
+            
             <fieldset id="group1">
-                <h3>Minimum distance from</h3>
+                <h3>Quantity </h3>
                 <div class="fields-list">
                     <div class="d-flex s-b ">
-                        <span>x</span>
-                        <input type="number" min="0" step="0.1" data-distance="x" value="0"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>y</span>
-                        <input type="number" min="0" step="0.1" data-distance="y" value="0"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>z</span>
-                        <input type="number" min="0" step="0.1" data-distance="z" value="0"/>
-                    </div>
+                        <input type="number"  data-quantity="x" disabled value="1"/>
+                    </div> 
                 </div>
             </fieldset> 
-            <fieldset id="group1">
-                <h3>Spacing between parts(default diameter  of bounding sphere)</h3>
-                <div class="fields-list">
-                    <div class="d-flex s-b ">
-                        <span>x</span>
-                        <input type="number" min="0" step="0.1" data-spacing="x" value="${width}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>y</span>
-                        <input type="number" min="0" step="0.1" data-spacing="y" value="${depth}"/>
-                    </div>
-                    <div class="d-flex s-b ">
-                        <span>z</span>
-                        <input type="number" min="0" step="0.1" data-spacing="z" value="${height}"/>
-                    </div>
-                </div>
-            </fieldset>
+           
         </form>
         `;
         [].forEach.call(modal.content.querySelectorAll('input'), (nodeItem) => {
