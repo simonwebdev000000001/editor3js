@@ -20,7 +20,7 @@ export default class GUtils {
     static CONTROLS = {
         INCREMENTS: {
             TRANSLATE: 0.1,
-            ROTATE: (0.1),
+            ROTATE: (0.5),
             KEYBOARD_TRANSLATE: 10
         }
     }

@@ -8,6 +8,7 @@ import CubeCameraView from "./controls/cube_camera";
 
 import ModelPart from './modelPart';
 import GlUi from "./glUI";
+import * as HOOKS from "./hooks";
 
 /**
  * @class viewver controller
@@ -745,10 +746,10 @@ export class GlViewer {
                 }
             } else {
                 let _el = this.createLight(1);
-                _el =this.createLight(4);
+                _el = this.createLight(4);
                 _el.position.y = -1;
                 _el.position.x = -1;
-                  this.createLight(2);
+                this.createLight(2);
                 // if (this._datGui) this._datGui.addlight(_el);
             }
         } catch (e) {

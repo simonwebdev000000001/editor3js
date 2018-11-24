@@ -8,8 +8,11 @@
   form {
     max-height: 100vh;
     overflow: auto;
-    input {
-      max-width: 50px;
+    input{
+      &:not([type=file]){
+        max-width: 50px;
+      }
+
     }
     fieldset{
       *{

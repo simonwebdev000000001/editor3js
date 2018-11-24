@@ -18,30 +18,27 @@ export default class ModelPart {
         if (viewer._ui) {
             viewer._ui.onLoadPart(mesh);
         }
-        mesh._boxSize = function () {
-            let _box = this._helper.geometry.boundingBox,
-                height = _box.min.distanceTo(new THREE.Vector3(_box.min.x, _box.min.y, _box.max.z)),
-                width = _box.min.distanceTo(new THREE.Vector3(_box.max.x, _box.min.y, _box.min.z)),
-                depth = _box.min.distanceTo(new THREE.Vector3(_box.min.x, _box.max.y, _box.min.z));
-
-            return {
-                width,
-                height,
-                depth
-            }
-        }
         mesh._onDublicate = function (settings) {
-            viewer._events._onDeletePart(this);
+            let originMesh= this;
+            viewer._events._onDeletePart(originMesh);
             let geo = this.geometry.clone(),
+                tempMesh = new THREE.Mesh(geo),
+                tempBox = new THREE.BoxHelper(tempMesh),
                 {distance, copy, spacing, position} = settings,
-                dim = ['x', 'y', 'z'],
-                {height, width, depth} = this._boxSize(),
-            translateMin = this._helper.geometry.boundingBox.min.clone().negate();
+                dim = ['x', 'y', 'z'];
 
-            geo.translate(translateMin.x, translateMin.y, translateMin.z);
-            geo.translate(position.x, position.y, position.z);
-            geo.translate(distance.x, distance.y, distance.z);
+            tempBox.geometry.computeBoundingBox();
+            let {height, width, depth, _helper} = tempMesh._boxSize(),
+                translateMin = _helper.geometry.boundingBox.min.clone().negate();
 
+            // geo.translate(translateMin.x, translateMin.y, translateMin.z);
+            // geo.translate(position.x, position.y, position.z);
+            // geo.translate(distance.x, distance.y, distance.z);
+
+            // translateMin.negate();
+            // geo.translate(translateMin.x, translateMin.y, translateMin.z);
+            translateMin.add(position)
+            translateMin.add(distance)
             let delta = 0;
             for (let i = 0; i < copy.x; i++) {
                 for (let j = 0; j < copy.z; j++) {
@@ -49,21 +46,24 @@ export default class ModelPart {
                         // if (
                         //     i == 0 && j == 0 && k == 0
                         // ) continue;
-                        let position = new THREE.Vector3(
+                        let _position = new THREE.Vector3(
                             ((i + delta) * width) + spacing.x * (i + delta),
                             ((k + delta) * depth) + spacing.y * (k + delta),
                             ((j + delta) * height) + spacing.z * (j + delta)
                         );
-
+                        _position.add(translateMin);
                         if (
                             position.x > GUtils.CHAMPER.WIDTH ||
                             position.y > GUtils.CHAMPER.DEPTH ||
                             position.z > GUtils.CHAMPER.HEIGHT
                         ) continue;
                         let geoCopy = geo.clone();
-                        geoCopy.translate(position.x, position.y, position.z);
-                        let _model =new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
-                        this.matrix.decompose(new THREE.Vector3(),_model.mesh.quaternion,_model.mesh.scale);
+                        // geoCopy.translate(position.x, position.y, position.z);
+                        // geoCopy.translate(position.x, position.y, position.z);
+                        let _model = new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
+                        _model.mesh.position.copy(_position);
+                        // _model.mesh.quaternion.copy(originMesh.quaternion)
+                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion, _model.mesh.scale);
                     }
                 }
             }
