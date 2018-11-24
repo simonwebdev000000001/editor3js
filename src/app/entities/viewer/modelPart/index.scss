@@ -11,6 +11,10 @@
       border-radius: 2px;
       padding: 2px;
 
+      &.label-scale{
+        max-width: inherit;
+        white-space: nowrap;
+      }
       &.out {
         opacity: 0.2;
       }

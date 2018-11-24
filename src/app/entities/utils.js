@@ -31,6 +31,7 @@ export default class GUtils {
         BLUE: '#659BE0',
         RED: '#F45959',
         GREEN: '#52BE7F',
+        YELLOW: '#beb835',
         GRAY: '#6D7C8B',
         GRAY_CELL: '#DEDEE4',
         BACKGROUND: '#ECECF0',

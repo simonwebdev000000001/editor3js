@@ -1,5 +1,6 @@
 import GUtils from '../../utils'
 import BoxEdge from './box_edge'
+import ScaleControls from "./scale_axis";
 
 export default class BoxControls {
     constructor({tempStore, viewer}) {
@@ -111,6 +112,7 @@ export default class BoxControls {
                 new THREE.Vector3(geoVertices[i], geoVertices[i + 1], geoVertices[i + 2])
             );
         }
+        //rotation controls
         for (let i = 0; i < dimensionLines.length; i++) {
             let dimension = dimensionLines[i];
 
@@ -139,6 +141,10 @@ export default class BoxControls {
 
             this.controls.add(controls);
         }
+
+        //scaling controls
+        let scalingControls = new ScaleControls({parent:this});
+        this.controls.add(scalingControls.container);
     }
 
     remove() {
@@ -255,6 +261,8 @@ export default class BoxControls {
 
         let direction = endPoint.clone().sub(centerPivot).normalize(),
             dist = endPoint.distanceTo(centerPivot);
+
+
 
         transformControls.position.copy(this.viewer.scene.position).addScaledVector(direction, dist);
     }

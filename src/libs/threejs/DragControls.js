@@ -127,7 +127,7 @@ THREE.DragControls = function (_objects, _camera, _domElement, _viewer) {
         if (scope.enabled && _viewer.transformControls.tempStore) {
             var intersects = _raycaster.intersectObjects(_viewer.transformControls.tempStore.children, true);
 
-            if (intersects.length > 0 && intersects[0].object.isIntersectable) {
+            if (intersects.length > 0 && intersects[0].object.isIntersectable&& intersects[0].object._category !=2) {
 
                 // _selected = intersects[ 0 ].object;
                 _selected = _viewer.transformControls.object;

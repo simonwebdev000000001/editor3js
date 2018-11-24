@@ -419,7 +419,8 @@ THREE.TransformControls = function (camera, domElement) {
 
             object.scale.copy(_scaleStart).multiply(_tempVector);
 
-        } else if (mode === 'rotate') {
+        }
+        else if (mode === 'rotate') {
             // console.log(pointer,axis);
             var ROTATION_SPEED = 20 / worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 
@@ -1438,7 +1439,6 @@ THREE.TransformControlsPlane = function () {
         // Align the plane for current transform mode, axis and space.
 
         alignVector.copy(unitY);
-
         switch (this.mode) {
             case 'translate':
             case 'scale':
@@ -1454,6 +1454,7 @@ THREE.TransformControlsPlane = function () {
                     case 'Z':
                         alignVector.copy(this.eye).cross(unitZ);
                         dirVector.copy(unitZ).cross(alignVector);
+
                         break;
                     case 'XY':
                         dirVector.copy(unitZ);

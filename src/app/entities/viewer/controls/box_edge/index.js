@@ -1,45 +1,14 @@
 import GUtils from "../../../utils";
+import GLControls from "../index";
 
-export default class BoxEdge {
+export default class BoxEdge extends GLControls{
     constructor({geometry, material, parent, name}) {
+        super(parent.viewer.camera);
         let edge = this.edge = new THREE.Line(geometry, material),
             highLightMat = new THREE.LineBasicMaterial({color: '#ff0000', linewidth: 3}),
             self = this;
-        this.camera = parent.viewer.camera;
         this.controls = parent;
-        this._plane = new THREE.TransformControlsPlane();
-        this.dragging = false;
-        this.axis = null;
-        this.mode = 'rotate';
-        this.rotationSnap = 0;
-        this.space = 'local';
-        this.ray = new THREE.Raycaster();
-        this.cameraPosition = new THREE.Vector3();
-        this.cameraScale = new THREE.Vector3();
-        this.eye = new THREE.Vector3();
-        this.pointEnd = new THREE.Vector3();
-        this.pointStart = new THREE.Vector3();
-        this.rotationAxis = new THREE.Vector3();
-        this._alignVector = new THREE.Vector3();
-        this._tempVector = new THREE.Vector3();
-        this.parentPosition = new THREE.Vector3();
-        this.parentQuaternion = new THREE.Quaternion();
-        this.parentScale = new THREE.Vector3();
-        this.worldScaleStart = new THREE.Vector3();
-        this.worldPositionStart = new THREE.Vector3();
-        this.worldPosition = new THREE.Vector3();
-        this.worldQuaternion = new THREE.Quaternion();
-        this.worldQuaternionStart = new THREE.Quaternion();
-        this._quaternionStart = new THREE.Quaternion();
-        this.cameraQuaternion = new THREE.Quaternion();
-        this._tempQuaternion = new THREE.Quaternion();
-        this.worldScale = new THREE.Vector3();
 
-        this._unit = {
-            X: new THREE.Vector3(1, 0, 0),
-            Y: new THREE.Vector3(0, 1, 0),
-            Z: new THREE.Vector3(0, 0, 1)
-        }
 
         edge.name = name;
         edge._category = 2;
@@ -64,7 +33,7 @@ export default class BoxEdge {
             // parent.controls.parent.quaternion.multiply(quaternion);
             // this.lastEv = ev;
 
-            self.updateMtrix();
+            // self.updateMtrix();
             self.pointerMove(self.getPointer(ev));
             self.updateRotateLabel();
 
@@ -72,9 +41,7 @@ export default class BoxEdge {
         edge._mousedown = function (ev) {
             ev.target.style.cursor = 'col-resize';
 
-            parent.viewer.controls._enabled = parent.viewer.controls.enabled;
-            parent.viewer.transformControls._enabled = parent.viewer.transformControls.enabled;
-            parent.viewer.controls.enabled = parent.viewer.transformControls.enabled = false;
+
             // edge.material = highLightMat;
             edge.material.color = edge.material._color;
 
@@ -86,8 +53,7 @@ export default class BoxEdge {
             ev.target.style.cursor = '';
             this.lastEv = null;
             // edge.material = material;
-            parent.viewer.controls.enabled = parent.viewer.controls._enabled;
-            parent.viewer.transformControls.enabled = parent.viewer.transformControls._enabled;
+
             edge.material.color = edge.material.defcolor;
             self.removeLabels();
             self.pointerUp();
@@ -112,122 +78,10 @@ export default class BoxEdge {
         // return this.controls.viewer.transformControls.object
     }
 
-
-    getPointer(event) {
-
-        var pointer = event.changedTouches ? event.changedTouches[0] : event;
-
-        var rect = this.controls.viewer.gl.domElement.getBoundingClientRect();
-
-        return {
-            x: (pointer.clientX - rect.left) / rect.width * 2 - 1,
-            y: -(pointer.clientY - rect.top) / rect.height * 2 + 1,
-            button: event.button
-        };
-
+    editObject(){
+        return this.rotateObject();
     }
 
-    updateMtrix() {
-        let object = this.rotateObject(),
-            {
-
-                eye,
-                cameraPosition,
-                cameraQuaternion,
-                cameraScale,
-                parentPosition,
-                worldPosition,
-                worldQuaternion,
-                worldScale,
-                parentScale,
-                parentQuaternion
-            } = this;
-
-
-        object.updateMatrixWorld();
-        object.parent.matrixWorld.decompose(parentPosition, parentQuaternion, parentScale);
-        object.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
-
-
-        this.camera.updateMatrixWorld();
-        this.camera.matrixWorld.decompose(cameraPosition, cameraQuaternion, cameraScale);
-        if (this.camera instanceof THREE.PerspectiveCamera) {
-
-            eye.copy(cameraPosition).sub(worldPosition).normalize();
-
-        }
-    }
-
-    pointerUp(pointer) {
-
-
-        this.dragging = false;
-        this.axis = null;
-
-    };
-
-    pointerHover = function (intersect) {
-        this.axis = intersect ? intersect.name : null
-    };
-
-    pointerDown(pointer) {
-        let {
-            axis,
-            ray,
-            _plane,
-            pointStart,
-            pointEnd,
-            rotationAxis,
-            _alignVector,
-            _tempVector,
-            worldPositionStart,
-            worldScaleStart,
-            worldQuaternionStart,
-            _quaternionStart,
-            worldPosition,
-            worldQuaternion,
-            worldScale,
-            parentScale,
-            parentQuaternion
-        } = this;
-        let object = this.rotateObject();
-
-        ray.setFromCamera(pointer, this.camera);
-
-        let planeIntersect = ray.intersectObjects([_plane], true)[0] || false;
-
-        if (planeIntersect) {
-
-            var space = this.space;
-
-            // if (space === 'local' && this.mode === 'rotate') {
-            //
-            //     var snap = this.rotationSnap;
-
-            // if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
-            // if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
-            // if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
-
-            // }
-
-            object.updateMatrixWorld();
-            object.parent.updateMatrixWorld();
-
-            // _positionStart.copy(object.position);
-            _quaternionStart.copy(object.quaternion);
-            // _scaleStart.copy(object.scale);
-
-            object.matrixWorld.decompose(worldPositionStart, worldQuaternionStart, worldScaleStart);
-
-            pointStart.copy(planeIntersect.point).sub(worldPositionStart);
-
-            if (space === 'local') pointStart.applyQuaternion(worldQuaternionStart.clone().inverse());
-
-        }
-
-        this.dragging = true;
-
-    }
 
     pointerMove(pointer) {
         let {
@@ -394,26 +248,6 @@ export default class BoxEdge {
             ),
             angleDegText = angleDeg.toFixed(GUtils.SETTINGS.ROUND);
 
-        // let rotationAxis = new THREE.Vector3();
-        // switch (parent._dimension.dimension) {
-        //     case 'x': {
-        //         rotationAxis = new THREE.Vector3(0, 0, 1);
-        //         break
-        //     }
-        //     case 'y': {
-        //         rotationAxis = new THREE.Vector3(0, 0, 1);
-        //         break
-        //     }
-        //     case 'z': {
-        //         rotationAxis = new THREE.Vector3(0, 0, 1);
-        //         break
-        //     }
-        // }
-        // let startQuaternion = new THREE.Quaternion();
-        // if (!_tempLabelStore.startQuaternion) _tempLabelStore.startQuaternion = _tempLabelStore.quaternion.clone();
-        // _tempLabelStore.quaternion.copy(_tempLabelStore.startQuaternion);
-        // _tempLabelStore.quaternion.multiply(startQuaternion.setFromAxisAngle(rotationAxis, angleRad  ));
-        // _tempLabelStore.quaternion.slerp(_tempLabelStore.quaternion,_tempLabelStore.quaternion.clone().dot(_tempLabelStore.parent.quaternion),_tempLabelStore.quaternion,1)
         if (parent._dimension.dimension == 'y') angleRad *= -1;
         ringElement.geometry = this._updateRingGeo({
             thetaLength: angleRad / Math.PI * 2,

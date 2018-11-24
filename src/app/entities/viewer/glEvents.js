@@ -248,7 +248,7 @@ export class MEvents extends GLMain {
                 break;
 
             case 82: // R
-                if (main.transformControls) main.transformControls.setMode("scale");
+                // if (main.transformControls) main.transformControls.setMode("scale");
                 break;
 
             case 187:
@@ -492,7 +492,7 @@ export class MEvents extends GLMain {
     }
 
     onMouseUp(ev, acc) {
-        this.main.controls.enabled = true;
+        this.main.controls.enabled =this.main.dragControls.enabled = true;
         document.body.style.cursor = '';
         if (this._lastSelectedMesh) {
             switch (this._lastSelectedMesh._category) {
@@ -554,14 +554,13 @@ export class MEvents extends GLMain {
 
             this.onSelected(ev, (inters) => {
                 // document.body.style.cursor = inters.length ? 'move' : '';
-
                 if (inters && inters.length) {
                     document.body.style.cursor = 'move';
                     let element = this.lastHovered = inters[0].object;
+
                     switch (element._category) {
                         case 2: {
                             element._mouseover(ev);
-
                             break;
                         }
                     }
@@ -582,6 +581,7 @@ export class MEvents extends GLMain {
             }
 
         }
+
     }
 
 
@@ -599,7 +599,7 @@ export class MEvents extends GLMain {
                     this._lastSelectedMesh = element;
                     switch (element._category) {
                         case 2: {
-                            this.main.controls.enabled = false;
+                            this.main.controls.enabled =this.main.dragControls.enabled = false;
                             this.Utils.Config.onEventPrevent(ev);
                             element._mousedown(ev);
                             break;

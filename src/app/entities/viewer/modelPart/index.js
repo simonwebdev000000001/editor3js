@@ -21,7 +21,10 @@ export default class ModelPart {
         mesh._onDublicate = function (settings) {
             let originMesh= this;
             viewer._events._onDeletePart(originMesh);
-            let geo = this.geometry.clone(),
+            let geo = this.geometry.clone();
+            geo.scale(mesh.scale.x,mesh.scale.y,mesh.scale.z);
+
+            let
                 tempMesh = new THREE.Mesh(geo),
                 tempBox = new THREE.BoxHelper(tempMesh),
                 {distance, copy, spacing, position} = settings,
@@ -63,7 +66,7 @@ export default class ModelPart {
                         let _model = new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
                         _model.mesh.position.copy(_position);
                         // _model.mesh.quaternion.copy(originMesh.quaternion)
-                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion, _model.mesh.scale);
+                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion,new THREE.Vector3());
                     }
                 }
             }
