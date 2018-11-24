@@ -338,6 +338,7 @@ export class GlViewer {
 
         transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
         transformControls.setSpace("local");
+        transformControls.setTranslationSnap(GUtils.CONTROLS.INCREMENTS.TRANSLATE);
         transformControls.addEventListener('mouseDown', (...e) => {
             dragControls.enabled = false;
             transformControls.tempParent._box.onStartTranslate();
@@ -358,6 +359,8 @@ export class GlViewer {
         transformControls.addEventListener('dragging-changed', function (event) {
             controls.enabled = !event.value;
         });
+
+
         // let dragControls = this.dragControls ={};
         let dragControls = this.dragControls = new THREE.DragControls([], camera, renderer.domElement, this);
         dragControls.addEventListener('dragstart', function () {

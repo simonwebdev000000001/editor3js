@@ -37,17 +37,13 @@ export default class GlUi {
                 <fieldset id="group1">
                     <h3>Controls Settings</h3>
                     <div class="fields-list">
-                        <div class="d-flex s-b ">
-                            <span>Step increments(mm),only for Keyboard</span>
-                            <input type="number" min="0" step="0.5" data-controls="increments-keyboard_translate" value="${GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE}"/>
-                        </div>
-                        <div class="d-flex s-b ">
+                        <div class="d-flex s-b border-bottom">
                             <span>Increments Translate(mm)</span>
-                            <input type="number" min="0" step="0.5" data-controls="increments-translate" value="${GUtils.CONTROLS.INCREMENTS.TRANSLATE}"/>
+                            <input type="number" min="0" step="0.1" data-controls="increments-translate" value="${GUtils.CONTROLS.INCREMENTS.TRANSLATE}"/>
                         </div>
-                        <div class="d-flex s-b ">
+                        <div class="d-flex s-b border-bottom">
                             <span>Increments Rotating(deg)</span>
-                            <input type="number" min="0" step="0.5" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
+                            <input type="number" min="0" step="0.1" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
                         </div>
                     </div>
                 </fieldset> 
@@ -222,7 +218,7 @@ export default class GlUi {
                                     } else {
                                         main.transformControls.setRotationSnap(THREE.Math.degToRad(val));
                                     }
-
+                                    GUtils.CONTROLS.INCREMENTS.ROTATE =  (val);
                                     break;
                                 }
                                 case 'increments-keyboard_translate': {
@@ -272,7 +268,7 @@ export default class GlUi {
 
     onLoadPart(mesh) {
         let divContainer = `
-        <div class="d-flex f-r s-b part-item-info">
+        <div class="d-flex f-r s-b part-item-info border-bottom">
                 <label class="part-title" data-part-select="${mesh.uuid}">
                 <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
                 <div class="actions">
