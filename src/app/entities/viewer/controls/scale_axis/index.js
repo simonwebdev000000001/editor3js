@@ -115,7 +115,6 @@ export default class ScaleControls extends GLControls {
                 self.pointerMove(self.getPointer(ev));
                 self.updateLabels();
 
-
                 // self.controls.viewer.transformControls.scale.copy(self.editObject().scale);
                 self.controls.updateArrowPst();
             }
