@@ -64,7 +64,13 @@ export default class CubeCameraView {
         light.shadow.camera.far = this.camera.far;
 
         this.scene.add(light1);
-        this.scene.add(light);
+        // this.scene.add(light);
+        light = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        light.position.set(0,0,0);
+        light = new THREE.PointLight( 0xffffff, 0.3, 100 );
+        light.position.addScaledVector(new THREE.Vector3(-1,-1,-1),1)
+        this.camera.add(light );
+        this.scene.add(this.camera);
     }
 
     _initCube() {
