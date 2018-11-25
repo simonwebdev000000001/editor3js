@@ -171,7 +171,7 @@ export class GlViewer {
             loader.load(url, (orGeometry) => {
                 if (GUtils.SETTINGS.SHOULD_FILL) this.fillMeshInChamber(orGeometry);
 
-                new ModelPart(this, {orGeometry, name});
+                new ModelPart(this, {orGeometry, name,shouldRecalcCenter:true});
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
@@ -276,6 +276,7 @@ export class GlViewer {
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();
+        this.temp_model = new THREE.Object3D();
         this.model.dragParts = [];
         this.model.name = 'model' + Date.now();
         this.scene.add(this.model);

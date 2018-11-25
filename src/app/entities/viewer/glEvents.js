@@ -416,6 +416,9 @@ export class MEvents extends GLMain {
                     listOfmodels.push(child);
                     this.deselectFromControls(child);
                     parent = child.parent;
+                }else{
+                    child.updateMatrixWorld();
+                    THREE.SceneUtils.detach(child, child.parent, this.main.temp_model);
                 }
             }
             transformControls.tempParent.parent.remove(transformControls.tempParent);
@@ -459,10 +462,14 @@ export class MEvents extends GLMain {
         transformControls.tempParent._box = new BoxControls({tempStore, viewer: this.main});
 
 
-        let items = [transformControls.tempParent._box.controls, ...listOfmodels];
-        transformControls.tempParent.position.copy(
-            transformControls.tempParent._box.controls._center
-        );
+        let items = [
+
+            ...listOfmodels,
+            transformControls.tempParent._box.controls
+        ];
+        // transformControls.tempParent.position.copy(
+        //     transformControls.tempParent._box.controls._center
+        // );
         // transformControls.tempParent.add(new THREE.AxesHelper(100))
 
         transformControls.tempParent.updateMatrixWorld();
@@ -472,19 +479,13 @@ export class MEvents extends GLMain {
             } else {
                 el.updateMatrixWorld();
                 el.material = main.model._selectedMaterial.clone();
-                THREE.SceneUtils.attach(el, tempStore, transformControls.tempParent);
+                THREE.SceneUtils.attach(el, this.main.model, transformControls.tempParent);
+                // transformControls.tempParent.add(el);
             }
 
         });
 
         transformControls.attach(transformControls.tempParent);
-
-
-        // let center = transformControls.tempParent._box.controls.geometry.boundingSphere.center,
-        //     endPoint = transformControls.tempParent._box.controls.geometry.boundingBox.min,
-        //     direction = endPoint.clone().sub(center).normalize(),
-        //     dist = endPoint.distanceTo(center);
-        // transformControls.position.copy(this.main.scene.position).addScaledVector(direction, dist);
 
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;

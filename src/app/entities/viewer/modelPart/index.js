@@ -3,10 +3,17 @@ import GUtils from "../../utils";
 let copies = 0;
 export default class ModelPart {
 
-    constructor(viewer, {orGeometry, name}) {
+    constructor(viewer, {orGeometry, name,shouldRecalcCenter}) {
         this.viewer = viewer;
+        let tempHelper = new THREE.BoxHelper(new THREE.Mesh(orGeometry)),
+            center = tempHelper.geometry.boundingSphere.center.clone().negate();
+        orGeometry.translate(center.x, center.y, center.z);
+
         let parent = viewer.model,
             mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial.clone());
+
+
+        mesh.position.copy(center.negate());
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.GRAY);
         mesh._helper.geometry.computeBoundingBox();
         mesh.isIntersectable = true;
@@ -133,16 +140,14 @@ export default class ModelPart {
         let helper = new THREE.BoxHelper(this.mesh);
         helper.geometry.computeBoundingBox();
 
-        let mesh = this.mesh._label_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(0.01, 1, 1));
+        let mesh = this.mesh._label_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 1, 1));
         mesh.visible = false;
         // mesh.scale.multiplyScalar(10);
-        mesh.position.copy(helper.geometry.boundingBox.min);
-
-        viewer.model.updateMatrixWorld();
-        this.mesh.updateMatrixWorld();
-        mesh.updateMatrixWorld();
-        THREE.SceneUtils.detach(mesh, viewer.model, this.mesh);
-        // this.mesh.add(mesh);
+        let v1=helper.geometry.boundingSphere.center.clone(),
+            v2 = helper.geometry.boundingBox.min.clone(),
+        dist = v1.distanceTo(v2);
+        mesh.position.addScaledVector(v2.sub(v1).normalize(),dist);
+        this.mesh.add(mesh);
         let labelContainer = this.labelContainer = document.createElement('div');
         labelContainer.className = "label-container";
         labelContainer.innerHTML = `
@@ -204,8 +209,9 @@ export default class ModelPart {
             child._orParent.updateMatrixWorld();
             child.updateMatrixWorld();
             child.material = child._material;
+            child._last_controls = child.parent;
             THREE.SceneUtils.detach(child, child.parent, child._orParent);
-            child._helper.last_center = child.position.clone();
+            // child._helper.last_center = child.position.clone();
             // child._helper.position.copy(child.position.clone());
         }
 

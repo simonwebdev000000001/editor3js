@@ -5,23 +5,21 @@ import ScaleControls from "./scale_axis";
 export default class BoxControls {
     constructor({tempStore, viewer}) {
         let countOfItems = tempStore.children.length;
-        if (countOfItems > 1||1) {
+        if (countOfItems > 1 ) {
             this.controls = new THREE.BoxHelper(tempStore, GUtils.COLORS.GRAY);
+            this.controls._parent = this;
             this.controls.geometry.computeBoundingBox();
+            this.controls._center = this.controls.geometry.boundingSphere.center;
+
         } else {
             let mesh = tempStore.children[0];
             this.controls = mesh._helper;
+
             while (this.controls.children.length) this.controls.remove(this.controls.children[0]);
-            mesh.updateMatrix();
-            // this.controls.geometry.translate(mesh.position.x,mesh.position.y,mesh.position.z);
-            this.controls.geometry.computeBoundingSphere();
-            // this.controls.quaternion.copy(mesh.quaternion);
-            // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
-            mesh.matrix.identity();
-            mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+            // this.controls.matrix.identity();
+            // this.controls.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
         }
 
-        // this.controls.parent.radius = this.controls.geometry.boundingSphere.radius;
         this.controls._tempStore = tempStore;
         this.viewer = viewer;
         let v1 = this.controls.geometry.boundingBox.min,
@@ -34,27 +32,29 @@ export default class BoxControls {
         this._addBoxLines();
         this._addTranslatePivot();
 
-        this.controls._center = this.controls.geometry.boundingSphere.center;
-        // console.log(this.controls._center);
-        // if (countOfItems == 1) {
-        //     let mesh = tempStore.children[0];
-        //     mesh.updateMatrix();
-        //     // this.controls.position.copy(mesh.position);
-        //     // this.controls.quaternion.copy(mesh.quaternion);
-        //     // this.controls.position.copy(mesh.position);
-        //     // this.controls.quaternion.copy(mesh.quaternion);
-        //     // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
-        //     // if (this.controls.position.distanceTo(this.viewer.scene.position) == 0) {
-        //     //
-        //     // } else {
-        //     //     if(this.controls.last_center)this.controls._center = this.controls.last_center;
-        //     // }
-        //
-        //     mesh.matrix.identity();
-        //     mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
-        //
-        // }
 
+        if (countOfItems > 1 || !this.controls.isOnePart) {
+            this.controls.isOnePart = true;
+            viewer.transformControls.tempParent.position.copy(
+                this.controls.geometry.boundingSphere.center
+            );
+        }else if(this.controls.isOnePart ){
+            let mesh = tempStore.children[0];
+            // mesh.updateMatrix();
+            // viewer.transformControls.tempParent.position.copy(mesh.position);
+            // this.controls.position.copy(mesh.position);
+            // this.controls.geometry.translate(mesh.position.x,mesh.position.y,mesh.position.z);
+            // if (this.controls.isOnePart) {
+            //     this.controls.geometry.computeBoundingSphere();
+            // viewer.transformControls.tempParent.rotation.copy(mesh.rotation);
+            // viewer.transformControls.tempParent.position.copy(mesh.position.clone().negate());
+            mesh.matrix.decompose(viewer.transformControls.tempParent.position, viewer.transformControls.tempParent.quaternion, viewer.transformControls.tempParent.scale);
+            // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
+
+            // mesh.matrix.identity();
+            // mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+            // }
+        }
         this.updateArrowPst();
     }
 
@@ -143,7 +143,7 @@ export default class BoxControls {
         }
 
         //scaling controls
-        let scalingControls = new ScaleControls({parent:this});
+        let scalingControls = new ScaleControls({parent: this});
         this.controls.add(scalingControls.container);
     }
 
@@ -261,7 +261,6 @@ export default class BoxControls {
 
         let direction = endPoint.clone().sub(centerPivot).normalize(),
             dist = endPoint.distanceTo(centerPivot);
-
 
 
         transformControls.position.copy(this.viewer.scene.position).addScaledVector(direction, dist);
