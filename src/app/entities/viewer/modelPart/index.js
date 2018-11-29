@@ -3,17 +3,19 @@ import GUtils from "../../utils";
 let copies = 0;
 export default class ModelPart {
 
-    constructor(viewer, {orGeometry, name,shouldRecalcCenter}) {
+    constructor(viewer, {orGeometry, name, shouldRecalcCenter}) {
         this.viewer = viewer;
-        let tempHelper = new THREE.BoxHelper(new THREE.Mesh(orGeometry)),
+        let center;
+        if (shouldRecalcCenter) {
+            let tempHelper = new THREE.BoxHelper(new THREE.Mesh(orGeometry));
             center = tempHelper.geometry.boundingSphere.center.clone().negate();
-        orGeometry.translate(center.x, center.y, center.z);
-
+            orGeometry.translate(center.x, center.y, center.z);
+        }
         let parent = viewer.model,
             mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial.clone());
 
 
-        mesh.position.copy(center.negate());
+        if (shouldRecalcCenter) mesh.position.copy(center.negate());
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.GRAY);
         mesh._helper.geometry.computeBoundingBox();
         mesh.isIntersectable = true;
@@ -26,10 +28,10 @@ export default class ModelPart {
             viewer._ui.onLoadPart(mesh);
         }
         mesh._onDublicate = function (settings) {
-            let originMesh= this;
+            let originMesh = this;
             viewer._events._onDeletePart(originMesh);
             let geo = this.geometry.clone();
-            geo.scale(mesh.scale.x,mesh.scale.y,mesh.scale.z);
+            geo.scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
 
             let
                 tempMesh = new THREE.Mesh(geo),
@@ -73,7 +75,7 @@ export default class ModelPart {
                         let _model = new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
                         _model.mesh.position.copy(_position);
                         // _model.mesh.quaternion.copy(originMesh.quaternion)
-                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion,new THREE.Vector3());
+                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion, new THREE.Vector3());
                     }
                 }
             }
@@ -143,10 +145,10 @@ export default class ModelPart {
         let mesh = this.mesh._label_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 1, 1));
         mesh.visible = false;
         // mesh.scale.multiplyScalar(10);
-        let v1=helper.geometry.boundingSphere.center.clone(),
+        let v1 = helper.geometry.boundingSphere.center.clone(),
             v2 = helper.geometry.boundingBox.min.clone(),
-        dist = v1.distanceTo(v2);
-        mesh.position.addScaledVector(v2.sub(v1).normalize(),dist);
+            dist = v1.distanceTo(v2);
+        mesh.position.addScaledVector(v2.sub(v1).normalize(), dist);
         this.mesh.add(mesh);
         let labelContainer = this.labelContainer = document.createElement('div');
         labelContainer.className = "label-container";

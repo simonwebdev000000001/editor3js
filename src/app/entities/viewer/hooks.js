@@ -22,6 +22,9 @@ THREE.BoxHelper.prototype._boxSize = function () {
         depth = _box.min.distanceTo(new THREE.Vector3(_box.min.x, _box.max.y, _box.min.z));
 
     return {
+        x:width,
+        y:depth,
+        z:height,
         width,
         height,
         depth

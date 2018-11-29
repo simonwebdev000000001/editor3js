@@ -7,6 +7,11 @@ export default class ScaleControls extends GLControls {
         this.controls = parent;
         this._initAxises();
         this.mode = this._plane.mode = 'scale';
+        this.helpers = {
+            x: 'width',
+            y: 'depdth',
+            z: 'height',
+        }
     }
 
     _initAxises() {
@@ -74,7 +79,7 @@ export default class ScaleControls extends GLControls {
                 conusHeight = 10 * size,
                 geometry = new THREE.TubeBufferGeometry(curve, 10, size, 10, true),
                 material = new THREE.MeshPhongMaterial({
-                    color: el.color,
+                    color: GUtils.COLORS.GRAY,
                     transparent: true,
                     opacity: 0.7
                 }),
@@ -190,16 +195,21 @@ export default class ScaleControls extends GLControls {
         if (this.axis == 'XYZ') {
             div.innerHTML = '';
             this.axis.split("").forEach((dimension) => {
+                let _axis = dimension.toLowerCase(),
+                    size = editObject.scale[_axis] * this.size[_axis];
                 dimension = dimension.toLowerCase();
-                div.innerHTML += `<span>${dimension} = ${editObject.scale[dimension].toFixed(GUtils.SETTINGS.ROUND)}</span><br>`;
+                div.innerHTML += `<span>${ this.helpers[dimension]} = ${size.toFixed(GUtils.SETTINGS.ROUND)}</span><br>`;
             })
         } else {
-            div.innerHTML = `<span>${this.axis.toLowerCase()} = ${editObject.scale[this.axis.toLowerCase()].toFixed(GUtils.SETTINGS.ROUND)}</span>`;
+            let _axis = this.axis.toLowerCase(),
+                size = editObject.scale[_axis] * this.size[_axis];
+            div.innerHTML = `<span>${this.helpers[_axis]} = ${size.toFixed(GUtils.SETTINGS.ROUND)}</span>`;
         }
 
     }
 
     initLabels() {
+        this.size = this.controls.controls._boxSize();
         let div = this.container.labelAngleContainer = document.createElement('div');
         div.className = 'label-container label-scale';
         div.style.backgroundColor = GUtils.COLORS.RED;
