@@ -34,6 +34,23 @@ export default class GlUi {
                         </div> 
                     </div> 
                 </fieldset> 
+                 <fieldset id="group1">
+                    <h3 class="field-desc">Measure</h3>
+                    <div class="fields-list">
+                        <div class="d-flex s-b">
+                            <input type="radio"  id="tool-1" value="NONE" name="tools" checked data-controls="tools"/>
+                            <label for="tool-1" style="width: 100%">NONE</label>
+                        </div> 
+                         <div class="d-flex s-b">
+                            <input type="radio" id="tool-2" value="LENGTH_BTW_TWO_POINTS" name="tools"  data-controls="tools"/>
+                            <label for="tool-2" style="width: 100%">Length 2 points</label>
+                        </div> 
+                           <div class="d-flex s-b">
+                            <input type="radio" id="tool-3" value="tools_legth_btw_three_points" name="tools"/>
+                            <label for="tool-3" style="width: 100%">Length 3 points</label>
+                        </div> 
+                    </div> 
+                </fieldset> 
                 <fieldset id="group1">
                     <h3>Controls Settings</h3>
                     <div class="fields-list">
@@ -64,9 +81,18 @@ export default class GlUi {
                 <fieldset id="group1">
                     <h3>Material</h3>
                      <div class="fields-list">
-                        <input type="radio" name="material" value="1" ${_self.materialType == 1 ? 'checked="checked"' : ''} > Wireframe<br>
-                        <input type="radio" name="material" value="2"> Basic<br>
-                        <input type="radio" name="material" value="3" ${_self.materialType == 3 ? 'checked="checked"' : ''}> Phong
+                         <div class="d-flex s-b">
+                            <input type="radio" id="material-1"  name="material" value="1" ${_self.materialType == 1 ? 'checked="checked"' : ''} >
+                            <label for="material-1" style="width: 100%">Wireframe</label> 
+                         </div>
+                         <div class="d-flex s-b">
+                            <input type="radio"  id="material-2" name="material" value="2"> 
+                            <label for="material-2" style="width: 100%">Basic</label>
+                         </div>
+                          <div class="d-flex s-b">
+                            <input type="radio" id="material-3" name="material" value="3" ${_self.materialType == 3 ? 'checked="checked"' : ''}>  
+                            <label for="material-3" style="width: 100%">Phong</label>
+                         </div>
                      </div>
                  </fieldset>
                  <fieldset id="group2">
@@ -163,9 +189,19 @@ export default class GlUi {
                 })()*/
             });
             for (let i = 0; i < radioButtons.length; i++) {
-                radioButtons[i].addEventListener('click', function (e) {
-                    _self.materialType = e.target.value;
-                    _self.updateMaterials();
+                radioButtons[i].addEventListener('change', function (e) {
+
+                    switch (e.target.name) {
+                        case 'material':{
+                            _self.materialType = e.target.value;
+                            _self.updateMaterials();
+                            break;
+                        }
+                        case 'tools':{
+                            parent._events.onSelectTool(e.target.value);
+                            break;
+                        }
+                    }
                 })
             }
             for (let i = 0; i < exportBtns.length; i++) {
@@ -218,7 +254,7 @@ export default class GlUi {
                                     } else {
                                         main.transformControls.setRotationSnap(THREE.Math.degToRad(val));
                                     }
-                                    GUtils.CONTROLS.INCREMENTS.ROTATE =  (val);
+                                    GUtils.CONTROLS.INCREMENTS.ROTATE = (val);
                                     break;
                                 }
                                 case 'increments-keyboard_translate': {
@@ -423,7 +459,7 @@ class DuplicatePart {
                     });
                     modal.content.querySelector('input[data-quantity]').value = quantity;
 
-                    if ((modal.content.querySelector('input[data-spacing="' + dimensionCopy + '"]').value) * _val + distance * (_val-1) < GUtils.CHAMPER[dimens] || _val === 1) {
+                    if ((modal.content.querySelector('input[data-spacing="' + dimensionCopy + '"]').value) * _val + distance * (_val - 1) < GUtils.CHAMPER[dimens] || _val === 1) {
                         let _w = e.target.parentNode.querySelector('.warnings');
                         if (_w) {
                             _w.parentNode.removeChild(_w);

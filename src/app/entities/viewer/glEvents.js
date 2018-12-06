@@ -1,9 +1,11 @@
 import {GlViewer} from "./glViewer.js";
 import {GLMain} from "./glMain.js";
 import GUtils from "../utils";
+import PointerConductor from "./controls/pointer_conductor";
 
 
 import BoxControls from './controls/box';
+import {Utils} from "../../utils";
 
 /**
  * @class events for canvas viewver and some events for buttons
@@ -16,7 +18,10 @@ export class MEvents extends GLMain {
     constructor(main) {
         super();
         this.main = main;
+        this.TOOL = -1;
         this.EVENTS_NAME = this.Utils.Config.EVENTS_NAME;
+        this._pointerConductor = new PointerConductor();
+        main.scene.add(this._pointerConductor.pointer);
         this.mouse = new MMouse(main);
         this.raycaster = new THREE.Raycaster();
         this.pathOnMove = 50;
@@ -311,7 +316,8 @@ export class MEvents extends GLMain {
             this._onDeletePart(mesh);
         }
     }
-    _onDeletePart(mesh){
+
+    _onDeletePart(mesh) {
         this.onSelectPart();
         mesh._control.remove();
     }
@@ -416,7 +422,7 @@ export class MEvents extends GLMain {
                     listOfmodels.push(child);
                     this.deselectFromControls(child);
                     parent = child.parent;
-                }else{
+                } else {
                     child.updateMatrixWorld();
                     THREE.SceneUtils.detach(child, child.parent, this.main.temp_model);
                 }
@@ -493,7 +499,7 @@ export class MEvents extends GLMain {
     }
 
     onMouseUp(ev, acc) {
-        this.main.controls.enabled =this.main.dragControls.enabled = true;
+        this.main.controls.enabled = this.main.dragControls.enabled = true;
         document.body.style.cursor = '';
         if (this._lastSelectedMesh) {
             switch (this._lastSelectedMesh._category) {
@@ -519,6 +525,11 @@ export class MEvents extends GLMain {
 
         }
 
+        if (this.TOOL > 0) {
+
+
+            return this.Utils.Config.onEventPrevent(ev, true);
+        }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
                 let object,
@@ -543,6 +554,7 @@ export class MEvents extends GLMain {
         this.lastSelectedMesh = this.lastHovered = null;
         this.main.refresh();
         document.body.style.cursor = '';
+        this._pointerConductor.hide();
         if (noMouseDown) {
             if (_elH) {
                 switch (_elH._category) {
@@ -557,7 +569,26 @@ export class MEvents extends GLMain {
                 // document.body.style.cursor = inters.length ? 'move' : '';
                 if (inters && inters.length) {
                     document.body.style.cursor = 'move';
-                    let element = this.lastHovered = inters[0].object;
+                    let _inter = inters[0],
+                        element = this.lastHovered = _inter.object;
+
+                    if (this.TOOL > 0) {
+                        switch (this.TOOL) {
+                            case GUtils.TOOLS.LENGTH_BTW_TWO_POINTS: {
+
+                                break;
+                            }
+                        }
+
+                        switch (element._category) {
+                            case GUtils.CATEGORIES.STL_LOADED_PART: {
+                                this._pointerConductor.pointer.rotateA(_inter);
+                                break;
+                            }
+                        }
+                        return this.Utils.Config.onEventPrevent(ev, true);
+                    }
+
 
                     switch (element._category) {
                         case 2: {
@@ -591,6 +622,12 @@ export class MEvents extends GLMain {
         this.mouse.down = ev;
         this.main.controls.autoRotate = false;
         this.lastEv = this.lastSelectedMesh = false;
+
+        if (this.TOOL > 0) {
+
+
+            return this.Utils.Config.onEventPrevent(ev, true);
+        }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (inters) => {
 
@@ -600,7 +637,7 @@ export class MEvents extends GLMain {
                     this._lastSelectedMesh = element;
                     switch (element._category) {
                         case 2: {
-                            this.main.controls.enabled =this.main.dragControls.enabled = false;
+                            this.main.controls.enabled = this.main.dragControls.enabled = false;
                             this.Utils.Config.onEventPrevent(ev);
                             element._mousedown(ev);
                             break;
@@ -728,6 +765,10 @@ export class MEvents extends GLMain {
         }
 
         return _self.raycaster.intersectObjects(elements, true);
+    }
+
+    onSelectTool(val) {
+        this.TOOL = GUtils.TOOLS[val] || -1;
     }
 }
 

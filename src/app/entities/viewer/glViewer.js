@@ -65,8 +65,8 @@ export class GlViewer {
 
 
         this._cubeCamera = new CubeCameraView();
-        this._animation = new Animation(this);
         this._events = new MEvents(this);
+        this.initControls();
         this.container.appendChild(this._cubeCamera.renderer.domElement);
 
         this._cubeCamera.controls.addEventListener('change', () => {
@@ -110,6 +110,9 @@ export class GlViewer {
             });
             this.noUpdateCamera = false;
         }
+
+
+        this._animation = new Animation(this);
         this.zoomCamera();
         // this._transformUI = new TransformControls(this);
 
@@ -273,6 +276,91 @@ export class GlViewer {
         if (this.composer) this.composer.renderer = renderer;
     }
 
+    initControls(){
+        let {camera} = this,
+            renderer = this.gl;
+        let controls = this.controls = new THREE.OOrbitControls(camera, renderer.domElement);
+        this.controls.constraint.smoothZoomSpeed = this.controls.smoothZoomSpeed = 5.0;
+        this.controls.enableDamping = true;
+        this.controls.inverse = false;
+        this.controls.autoRotateSpeed = 0.10;
+        this.controls.constraint.smoothZoom = true;
+        this.controls.constraint.zoomDampingFactor = this.controls.zoomDampingFactor = 0.12;
+
+
+        controls.autoRotate = controls.enableZoom = true;
+        controls.enableDamping = true;//!this.isMobile;
+        controls.dampingFactor = 0.1;
+        //controls.inverseY = true;
+        //controls.inverseX = true;
+        controls.rotateSpeed = 0.1693;
+        controls.rotateSpeedUP = 0.06493;
+        //controls.zoomSpeed = 0.87;
+        //if (isMobile) controls.zoomSpeed = 1;
+        controls.enableKeys = false
+        // controls.maxPolarAngle = Math.PI * 0.461;
+        controls.addEventListener('change', (e) => {
+            this.refresh();
+            this.scene.traverse((child) => {
+                if (child._control) {
+                    child._control.updateLabel();
+                }
+            });
+            this._events._pointerConductor.updateSize(this.camera.position.distanceTo(this.controls.target));
+        });
+        let transformControls = this.transformControls = new THREE.TransformControls(camera, renderer.domElement);
+
+
+        transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
+        transformControls.setSpace("local");
+        transformControls.setTranslationSnap(GUtils.CONTROLS.INCREMENTS.TRANSLATE);
+        transformControls.addEventListener('mouseDown', (...e) => {
+            dragControls.enabled = false;
+            transformControls.tempParent._box.onStartTranslate();
+        });
+        transformControls.addEventListener('mouseUp', () => {
+            dragControls.enabled = true;
+            transformControls.tempParent._box.onEndTranslate();
+        });
+        transformControls.addEventListener('change', () => {
+            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
+            this.scene.traverse((child) => {
+                if (child._control) {
+                    child._control.updateLabel();
+                    child._control.updateLabelValue();
+                }
+            });
+
+
+        });
+        transformControls.addEventListener('dragging-changed', function (event) {
+            controls.enabled = !event.value;
+        });
+
+
+        // let dragControls = this.dragControls ={};
+        let dragControls = this.dragControls = new THREE.DragControls([], camera, renderer.domElement, this);
+        dragControls.addEventListener('dragstart', function () {
+
+            controls.enabled = transformControls.enabled = false;
+
+        });
+        dragControls.addEventListener('dragend', function () {
+
+            controls.enabled = transformControls.enabled = true;
+
+        });
+        dragControls.addEventListener('drag', () => {
+
+            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
+            scene.traverse((child) => {
+                if (child._control) {
+                    child._control.updateLabel();
+                    child._control.updateLabelValue();
+                }
+            })
+        });
+    }
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();
@@ -307,84 +395,7 @@ export class GlViewer {
         this.camera.position.copy(this.camera.positionDef);
         this.camera.lookAt(this.scene.position);
         this.camera.updateProjectionMatrix();
-        let controls = this.controls = new THREE.OOrbitControls(camera, renderer.domElement);
-        this.controls.constraint.smoothZoomSpeed = this.controls.smoothZoomSpeed = 5.0;
-        this.controls.enableDamping = true;
-        this.controls.inverse = false;
-        this.controls.autoRotateSpeed = 0.10;
-        this.controls.constraint.smoothZoom = true;
-        this.controls.constraint.zoomDampingFactor = this.controls.zoomDampingFactor = 0.12;
 
-
-        controls.autoRotate = controls.enableZoom = true;
-        controls.enableDamping = true;//!this.isMobile;
-        controls.dampingFactor = 0.1;
-        //controls.inverseY = true;
-        //controls.inverseX = true;
-        controls.rotateSpeed = 0.1693;
-        controls.rotateSpeedUP = 0.06493;
-        //controls.zoomSpeed = 0.87;
-        //if (isMobile) controls.zoomSpeed = 1;
-        controls.enableKeys = false
-        // controls.maxPolarAngle = Math.PI * 0.461;
-        controls.addEventListener('change', (e) => {
-            this.refresh();
-            this.scene.traverse((child) => {
-                if (child._control) {
-                    child._control.updateLabel();
-                }
-            })
-        });
-        let transformControls = this.transformControls = new THREE.TransformControls(camera, renderer.domElement);
-
-
-        transformControls.transformControls = new THREE.TransformControls(camera, renderer.domElement);
-        transformControls.setSpace("local");
-        transformControls.setTranslationSnap(GUtils.CONTROLS.INCREMENTS.TRANSLATE);
-        transformControls.addEventListener('mouseDown', (...e) => {
-            dragControls.enabled = false;
-            transformControls.tempParent._box.onStartTranslate();
-        });
-        transformControls.addEventListener('mouseUp', () => {
-            dragControls.enabled = true;
-            transformControls.tempParent._box.onEndTranslate();
-        });
-        transformControls.addEventListener('change', () => {
-            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
-            this.scene.traverse((child) => {
-                if (child._control) {
-                    child._control.updateLabel();
-                    child._control.updateLabelValue();
-                }
-            })
-        });
-        transformControls.addEventListener('dragging-changed', function (event) {
-            controls.enabled = !event.value;
-        });
-
-
-        // let dragControls = this.dragControls ={};
-        let dragControls = this.dragControls = new THREE.DragControls([], camera, renderer.domElement, this);
-        dragControls.addEventListener('dragstart', function () {
-
-            controls.enabled = transformControls.enabled = false;
-
-        });
-        dragControls.addEventListener('dragend', function () {
-
-            controls.enabled = transformControls.enabled = true;
-
-        });
-        dragControls.addEventListener('drag', () => {
-
-            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
-            scene.traverse((child) => {
-                if (child._control) {
-                    child._control.updateLabel();
-                    child._control.updateLabelValue();
-                }
-            })
-        });
         this.addLights();
         this.applyBoxChamber();
         // floor.castShadow = floor.recieveShadow = true;

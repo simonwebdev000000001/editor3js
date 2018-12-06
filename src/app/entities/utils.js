@@ -17,6 +17,10 @@ export default class GUtils {
         TEMP_TRANSFORM_CONTAINER:11,
         STL_LOADED_PART:12
     }
+    static TOOLS = {
+        NONE:-1,
+        LENGTH_BTW_TWO_POINTS:1,
+    }
     static CONTROLS = {
         INCREMENTS: {
             TRANSLATE: 0.1,
