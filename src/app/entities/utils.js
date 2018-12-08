@@ -1,9 +1,8 @@
-
 export default class GUtils {
 
     static SETTINGS = {
-        SHOULD_FILL:false,
-        ROUND:2,
+        SHOULD_FILL: false,
+        ROUND: 2,
         CONTAINER_APP_ID: 'WEBGLVIEW',
         MAX_TOTAL_FILE_SIZE: 1024 * 1000 * 1000 * 10,//1024 -1 kb, 1024*1000 1bm,
         MAX_SINGE_FILE_SIZE: 1024 * 1000 * 1000 * 2,
@@ -11,15 +10,17 @@ export default class GUtils {
         SELECTED_COLOR: new THREE.Color(135 / 255, 210 / 255, 221 / 255)
     }
     static CLASSES = {
-        HIDDEN:'hidden'
+        HIDDEN: 'hidden'
     }
     static CATEGORIES = {
-        TEMP_TRANSFORM_CONTAINER:11,
-        STL_LOADED_PART:12
+        NONE: -1,
+        TEMP_TRANSFORM_CONTAINER: 11,
+        STL_LOADED_PART: 12
     }
     static TOOLS = {
-        NONE:-1,
-        LENGTH_BTW_TWO_POINTS:1,
+        NONE: -1,
+        LENGTH_BTW_TWO_POINTS: 1,
+        ANGLE_BTW_THREE_POINTS: 2,
     }
     static CONTROLS = {
         INCREMENTS: {
@@ -60,29 +61,33 @@ export default class GUtils {
             text: 'mm'
         }
     }
+
     static onEventPrevent(event, shouldStopPropogation) {
         event.preventDefault();
         if (shouldStopPropogation) event.stopPropagation();
         return false;
     }
-    static XMLtoHTNL(stringXML){
+
+    static XMLtoHTNL(stringXML) {
         let tempDiv = document.createElement('div');
         tempDiv.innerHTML = stringXML;
         return tempDiv.children[0];
     }
-    static getPointInBetweenByPerc(pointA, pointB, percentage=0.5) {
+
+    static getPointInBetweenByPerc(pointA, pointB, percentage = 0.5) {
 
         var dir = pointB.clone().sub(pointA);
         var len = dir.length();
-        dir = dir.normalize().multiplyScalar(len*percentage);
+        dir = dir.normalize().multiplyScalar(len * percentage);
         return pointA.clone().add(dir);
 
     }
+
     static label(el) {
         var amap = new THREE.Texture(
             GUtils.createCanvas(
                 {
-                    text: `${el.size} ${GUtils.DIMENSION.CURRENT.text}`
+                    text: el.text || `${el.size} ${GUtils.DIMENSION.CURRENT.text}`
                 }
             )
         );
@@ -99,9 +104,17 @@ export default class GUtils {
         sp.scale.set(-10, 5, -10); // CHANGED
         return sp;
     }
-    
 
-    static createCanvas({ text }) {
+
+    static randomColor() {
+        return '#' + (function co(lor) {
+            return (lor +=
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f'][Math.floor(Math.random() * 16)])
+            && (lor.length == 6) ? lor : co(lor);
+        })('');
+    }
+
+    static createCanvas({text}) {
         let canvas = document.createElement('canvas'),
             fontSize = 126,
             padding = 10,
@@ -112,8 +125,8 @@ export default class GUtils {
         var context = canvas.getContext('2d');
         context.fillStyle = GUtils.COLORS.GRAY;
 
-        context.textBaseline="middle";
-        context.textAlign="center";
+        context.textBaseline = "middle";
+        context.textAlign = "center";
         context.font = fontSize + 'px Arial';
         context.fillText(text, sizeWidth / 2, sieHeight / 2 + padding);
 
@@ -124,6 +137,7 @@ export default class GUtils {
         // canvas.style.zIndex = '10';
         return canvas;
     }
+
     static dataURItoBlob(dataURI) {
         // convert base64 to raw binary data held in a string
         // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
@@ -144,10 +158,11 @@ export default class GUtils {
         }
 
         // write the ArrayBuffer to a blob, and you're done
-        var blob = new Blob([ab], { type: mimeString });
+        var blob = new Blob([ab], {type: mimeString});
         return blob;
 
     }
+
     static deviceCheck() {
         var check = false;
         (function (a) {

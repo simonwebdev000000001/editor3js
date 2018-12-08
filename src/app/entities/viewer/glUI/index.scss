@@ -33,11 +33,18 @@
         &.active{
           display: inherit;
         }
-        .part-item-info{
-          input[type="checkbox"]{
-            pointer-events: none;
+
+        .part-item-container{
+          fieldset{
+            padding: 5px;
+          }
+          .part-item-info{
+            input[type="checkbox"]{
+              pointer-events: none;
+            }
           }
         }
+
       }
     }
 

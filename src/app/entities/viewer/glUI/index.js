@@ -46,8 +46,8 @@ export default class GlUi {
                             <label for="tool-2" style="width: 100%">Length 2 points</label>
                         </div> 
                            <div class="d-flex s-b">
-                            <input type="radio" id="tool-3" value="tools_legth_btw_three_points" name="tools"/>
-                            <label for="tool-3" style="width: 100%">Length 3 points</label>
+                            <input type="radio" id="tool-3" value="ANGLE_BTW_THREE_POINTS" name="tools"/>
+                            <label for="tool-3" style="width: 100%">Angle 3 points</label>
                         </div> 
                     </div> 
                 </fieldset> 
@@ -192,12 +192,12 @@ export default class GlUi {
                 radioButtons[i].addEventListener('change', function (e) {
 
                     switch (e.target.name) {
-                        case 'material':{
+                        case 'material': {
                             _self.materialType = e.target.value;
                             _self.updateMaterials();
                             break;
                         }
-                        case 'tools':{
+                        case 'tools': {
                             parent._events.onSelectTool(e.target.value);
                             break;
                         }
@@ -270,7 +270,8 @@ export default class GlUi {
 
 
             fileContainer.querySelector('#part_list').addEventListener('click', (e) => {
-                let {dataset} = e.target;
+                let {target} = e,
+                    {dataset} = target;
                 if (dataset.partDelete) {
                     parent._events.onDeletePart(self.getMeshByUUID(dataset.partDelete));
 
@@ -278,14 +279,28 @@ export default class GlUi {
                     parent._events.onSelectPart(self.getMeshByUUID(dataset.partSelect));
                 } else if (dataset.partCopy) {
                     new DuplicatePart(self.getMeshByUUID(dataset.partCopy))
+                } else if (dataset.partViewThickness) {
+                    let mesh = self.getMeshByUUID(dataset.partViewThickness);
+                    mesh._control.viewThickness(target.parentNode.parentNode.querySelector('input[name="thickness"]').value);
+                }else if (dataset.partClearThickness) {
+                    let mesh = self.getMeshByUUID(dataset.partClearThickness);
+                    mesh._control.clearThicknessView();
                 }
                 return GUtils.onEventPrevent(e);
             })
             fileContainer.addEventListener('click', (e) => {
                 if (e.target.tagName == 'H3' && e.target.parentNode.tagName == 'FIELDSET') {
-                    let _q = fileContainer.querySelector('.fields-list.active');
-                    if (_q) _q.className = _q.className.replace(' active', '');
-                    e.target.parentNode.querySelector('.fields-list').className += ' active';
+                    let _q = e.target.parentNode.querySelector('.fields-list');//fileContainer.querySelector('.fields-list.active');
+                    if (_q) {
+                        if (_q.className.match('active')) {
+                            _q.className = _q.className.replace(' active', '');
+                        } else {
+                            _q.className += ' active';
+                        }
+
+
+                    }
+
                 }
             })
         })()
@@ -302,20 +317,37 @@ export default class GlUi {
         return mesh;
     }
 
+
     onLoadPart(mesh) {
         let divContainer = `
-        <div class="d-flex f-r s-b part-item-info border-bottom">
-                <label class="part-title" data-part-select="${mesh.uuid}">
-                <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
-                <div class="actions">
-                    <button data-part-delete="${mesh.uuid}">
-                     <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
-                    </button>
-                    <button data-part-copy="${mesh.uuid}">
-                     <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
-                    </button>
-                </div>
-        </div>
+            <div class="d-flex f-c s-a part-item-container border-bottom">
+                <div class="d-flex f-r s-a part-item-info fullWidth">
+                     <label class="part-title" data-part-select="${mesh.uuid}">
+                     <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
+                     <div class="actions">
+                         <button data-part-delete="${mesh.uuid}">
+                         <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
+                         </button>
+                         <button data-part-copy="${mesh.uuid}">
+                         <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
+                         </button>
+                     </div>
+                 </div>
+                <fieldset id="group1" class="fullWidth">
+                                <h3 class="field-desc">Wall thickness</h3>
+                                <div class="fields-list">
+                                    <div class="d-flex s-b">
+                                        <label for="thickness-${Date.now()}" class="fullWidth">Threshold</label>
+                                        <input type="number" min="0" step="0.1"  id="thickness-${Date.now()}"  name="thickness"/>
+                                    </div>
+                                    <div class="d-flex">
+                                       <button data-part-view-thickness="${mesh.uuid}">View</button>
+                                       <button data-part-clear-thickness="${mesh.uuid}">Clear</button>
+                                    </div>   
+                                </div> 
+                </fieldset> 
+            </div>
+       
         `;
         divContainer = GUtils.XMLtoHTNL(divContainer);
         this.container.querySelector('#part_list').appendChild(divContainer);

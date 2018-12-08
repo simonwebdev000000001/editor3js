@@ -476,8 +476,7 @@
     }
 
     function onMouseDown( event ) {
-
-      if ( scope.enabled === false ) {
+        if ( scope.enabled === false ) {
 
       }else{
 

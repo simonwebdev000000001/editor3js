@@ -64,54 +64,8 @@ export class GlViewer {
         this._ui = new GlUi(_self);
 
 
-        this._cubeCamera = new CubeCameraView();
         this._events = new MEvents(this);
         this.initControls();
-        this.container.appendChild(this._cubeCamera.renderer.domElement);
-
-        this._cubeCamera.controls.addEventListener('change', () => {
-            if (this.noUpdateCamera) return
-            this.controls.autoRotate = false;
-            let vector = new THREE.Vector3();
-            this._cubeCamera.camera.getWorldDirection(vector);
-            vector.z *= -1;
-            this.camera.position.copy(this.controls.target.clone().addScaledVector(vector, this.camera.position.distanceTo(this.controls.target)));
-        });
-        this.controls.addEventListener('change', () => {
-            if (this.noUpdateCamera) return;
-            this.controls.autoRotate = false;
-            let vector = new THREE.Vector3();
-            this.camera.getWorldDirection(vector);
-            vector.z *= -1;
-            this._cubeCamera.camera.position.copy(this._cubeCamera.controls.target.clone().addScaledVector(vector, this._cubeCamera.camera.position.distanceTo(this._cubeCamera.controls.target)));
-        });
-
-        this._cubeCamera.onChangeView = async (view) => {
-            this.noUpdateCamera = true;
-            let cameraPst = this.camera.position,
-                target = this.controls.target,
-                newPst = target.clone().addScaledVector(view.positionView || view.position, cameraPst.distanceTo(target));
-
-            this.controls.autoRotate = false;
-            await this.move({
-                onStart: () => {
-                    this.controls.enabled = true;
-                    this.refresh();
-                }, onComplete: () => {
-                    this.refresh();
-
-
-                }, list: [{
-                    onUpdate: (delta) => {
-                        this.camera.position.lerp(newPst, delta);
-                        this.camera.updateProjectionMatrix();
-                    }
-                }]
-            });
-            this.noUpdateCamera = false;
-        }
-
-
         this._animation = new Animation(this);
         this.zoomCamera();
         // this._transformUI = new TransformControls(this);
@@ -174,7 +128,7 @@ export class GlViewer {
             loader.load(url, (orGeometry) => {
                 if (GUtils.SETTINGS.SHOULD_FILL) this.fillMeshInChamber(orGeometry);
 
-                new ModelPart(this, {orGeometry, name,shouldRecalcCenter:true});
+                new ModelPart(this, {orGeometry, name, shouldRecalcCenter: true});
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
@@ -276,7 +230,11 @@ export class GlViewer {
         if (this.composer) this.composer.renderer = renderer;
     }
 
-    initControls(){
+    toggleControls(enabled) {
+        this.dragControls.enabled = this.transformControls.enabled = this.controls.enabled = enabled;
+    }
+
+    initControls() {
         let {camera} = this,
             renderer = this.gl;
         let controls = this.controls = new THREE.OOrbitControls(camera, renderer.domElement);
@@ -323,14 +281,15 @@ export class GlViewer {
             transformControls.tempParent._box.onEndTranslate();
         });
         transformControls.addEventListener('change', () => {
-            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
-            this.scene.traverse((child) => {
-                if (child._control) {
-                    child._control.updateLabel();
-                    child._control.updateLabelValue();
-                }
-            });
-
+            if (transformControls.tempParent) {
+                transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
+                this.scene.traverse((child) => {
+                    if (child._control) {
+                        child._control.updateLabel();
+                        child._control.updateLabelValue();
+                    }
+                });
+            }
 
         });
         transformControls.addEventListener('dragging-changed', function (event) {
@@ -351,16 +310,64 @@ export class GlViewer {
 
         });
         dragControls.addEventListener('drag', () => {
-
-            transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
-            scene.traverse((child) => {
-                if (child._control) {
-                    child._control.updateLabel();
-                    child._control.updateLabelValue();
-                }
-            })
+            if (transformControls.tempParent) {
+                transformControls.tempParent._box.onChangeTranslate(transformControls.worldPositionStart, transformControls.worldPosition);
+                this.scene.traverse((child) => {
+                    if (child._control) {
+                        child._control.updateLabel();
+                        child._control.updateLabelValue();
+                    }
+                });
+            }
         });
+
+
+        this._cubeCamera = new CubeCameraView();
+        this.container.appendChild(this._cubeCamera.renderer.domElement);
+        this._cubeCamera.controls.addEventListener('change', () => {
+            if (this.noUpdateCamera) return
+            this.controls.autoRotate = false;
+            let vector = new THREE.Vector3();
+            this._cubeCamera.camera.getWorldDirection(vector);
+            vector.z *= -1;
+            this.camera.position.copy(this.controls.target.clone().addScaledVector(vector, this.camera.position.distanceTo(this.controls.target)));
+        });
+        this.controls.addEventListener('change', () => {
+            if (this.noUpdateCamera) return;
+            this.controls.autoRotate = false;
+            let vector = new THREE.Vector3();
+            this.camera.getWorldDirection(vector);
+            vector.z *= -1;
+            this._cubeCamera.camera.position.copy(this._cubeCamera.controls.target.clone().addScaledVector(vector, this._cubeCamera.camera.position.distanceTo(this._cubeCamera.controls.target)));
+        });
+
+        this._cubeCamera.onChangeView = async (view) => {
+            this.noUpdateCamera = true;
+            let cameraPst = this.camera.position,
+                target = this.controls.target,
+                newPst = target.clone().addScaledVector(view.positionView || view.position, cameraPst.distanceTo(target));
+
+            this.controls.autoRotate = false;
+            await this.move({
+                onStart: () => {
+                    this.controls.enabled = true;
+                    this.refresh();
+                }, onComplete: () => {
+                    this.refresh();
+
+
+                }, list: [{
+                    onUpdate: (delta) => {
+                        this.camera.position.lerp(newPst, delta);
+                        this.camera.updateProjectionMatrix();
+                    }
+                }]
+            });
+            this.noUpdateCamera = false;
+        }
+
     }
+
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();
@@ -762,6 +769,9 @@ export class GlViewer {
                 _el.position.y = -1;
                 _el.position.x = -1;
                 this.createLight(2);
+
+
+
                 // if (this._datGui) this._datGui.addlight(_el);
             }
         } catch (e) {

@@ -51,7 +51,8 @@ class Modal {
     }
 
     show() {
-        this.container.className = this.container.className.replace(/hidden/s, "");
+        var reg = '/hidden/s';
+        this.container.className = this.container.className.replace(reg, "");
     }
 
     onDestroy() {

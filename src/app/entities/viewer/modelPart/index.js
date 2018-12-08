@@ -1,10 +1,99 @@
 import GUtils from "../../utils";
 
 let copies = 0;
-export default class ModelPart {
+
+class Model {
+    constructor(viewer) {
+
+        this.viewer = viewer;
+        this.materials = {
+            base: viewer.model._curMaterial.clone(),
+            thicknessPreview: new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                side: THREE.BackSide,
+                vertexColors: THREE.FaceColors,
+                roughness: 0.3,
+                metalness: 0.0,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1
+            })
+        }
+    }
+
+    // reset face colors to white
+    resetFaceColors = function () {
+        let faces = this.baseMesh.geometry.faces;
+        for (let f = 0; f < faces.length; f++) {
+            faces[f].color.setRGB(1.0, 1.0, 1.0);
+        }
+
+        this.baseMesh.geometry.colorsNeedUpdate = true;
+    }
+
+    getOctree() {
+        if (!this.octree) this.octree = new Octree(this.baseMesh);
+
+        return this.octree;
+    }
+
+    viewThickness(threshold) {
+        if (!threshold) return console.warn(`threshold should be not empty`);
+        threshold = parseFloat(threshold);
+        this.viewer._events.onSelectPart();
+
+        // set the material
+        this.baseMesh.material = this.materials.thicknessPreview;
+        this.baseMesh.geometry = this.baseMesh._geometry;
+
+        let octree = this.getOctree();
+
+
+
+        // make sure the world matrix is up to date
+        this.baseMesh.updateMatrixWorld();
+
+        let geo = this.baseMesh.geometry;
+        let vertices = geo.vertices;
+        let faces = geo.faces;
+        let matrixWorld = this.baseMesh.matrixWorld;
+
+        let ray = new THREE.Ray();
+        let normal = new THREE.Vector3();
+        this.resetFaceColors();
+
+        for (let f = 0, l = faces.length; f < l; f++) {
+            let face = faces[f];
+
+            // compute ray in world space
+            ray.origin = Calculate.faceCenter(face, vertices, matrixWorld);
+            ray.direction = normal.copy(face.normal).transformDirection(matrixWorld).negate();
+
+            let intersection = octree.raycastInternal(ray);
+
+            if (intersection) {
+                let level = Math.min(intersection.distance / threshold, 1.0);
+
+                face.color.setRGB(1.0, level, level);
+            }
+        }
+
+        geo.colorsNeedUpdate = true;
+        this.baseMesh._category = GUtils.CATEGORIES.NONE;
+
+    }
+
+    clearThicknessView() {
+        this.baseMesh.material = this.materials.base;
+        this.baseMesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
+        this.baseMesh.geometry = this.baseMesh.buffer_geometry;
+    }
+}
+
+export default class ModelPart extends Model {
 
     constructor(viewer, {orGeometry, name, shouldRecalcCenter}) {
-        this.viewer = viewer;
+        super(viewer);
         let center;
         if (shouldRecalcCenter) {
             let tempHelper = new THREE.BoxHelper(new THREE.Mesh(orGeometry));
@@ -12,8 +101,11 @@ export default class ModelPart {
             orGeometry.translate(center.x, center.y, center.z);
         }
         let parent = viewer.model,
-            mesh = this.mesh = new THREE.Mesh(orGeometry, viewer.model._curMaterial.clone());
+            mesh = this.mesh = this.baseMesh = new THREE.Mesh(orGeometry, this.materials.base);
 
+
+        mesh._geometry = new THREE.Geometry().fromBufferGeometry(orGeometry);
+        mesh.buffer_geometry = orGeometry;
 
         if (shouldRecalcCenter) mesh.position.copy(center.negate());
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.GRAY);
