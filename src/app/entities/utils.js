@@ -26,6 +26,7 @@ export default class GUtils {
         INCREMENTS: {
             TRANSLATE: 0.1,
             ROTATE: (0.5),
+            SCALE: (0),
             KEYBOARD_TRANSLATE: 10
         }
     }

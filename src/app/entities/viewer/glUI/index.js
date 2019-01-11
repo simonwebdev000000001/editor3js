@@ -26,8 +26,11 @@ export default class GlUi {
                     </div> 
                 </fieldset>  
                 <fieldset id="group1">
-                    <h3 class="field-desc">Main Settings</h3>
-                    <div class="fields-list">
+                    <h3 class="field-desc">Main Tools</h3>
+                     <div class="fields-list">
+                        <div class="d-flex s-b">
+                            <button id="merge_selected">Merge selected</button> 
+                        </div> 
                         <div class="d-flex s-b">
                             <input type="checkbox" id="setting-1"  data-controls="settings-should_fill"/>
                             <label for="setting-1" style="width: 100%">Fill in chamber</label>
@@ -61,6 +64,10 @@ export default class GlUi {
                         <div class="d-flex s-b border-bottom">
                             <span>Increments Rotating(deg)</span>
                             <input type="number" min="0" step="0.1" data-controls="increments-rotate" value="${GUtils.CONTROLS.INCREMENTS.ROTATE}"/>
+                        </div>
+                        <div class="d-flex s-b border-bottom">
+                            <span>Increments Scaling(mm)</span>
+                            <input type="number" min="0" step="0.01" data-controls="increments-scale" value="${GUtils.CONTROLS.INCREMENTS.SCALE}"/>
                         </div>
                     </div>
                 </fieldset> 
@@ -126,7 +133,7 @@ export default class GlUi {
             let file = fileContainer.querySelector('input[type="file"]'),
                 radioButtons = fileContainer.querySelectorAll('input[type="radio"]'),
                 checkboxButtons = fileContainer.querySelectorAll('input[type="checkbox"]'),
-                exportBtns = fileContainer.querySelectorAll('button');
+                buttons = fileContainer.querySelectorAll('button');
             file.addEventListener('change', function (e) {
                 let fileList = e.target.files,
                     haveBigFiles = false;
@@ -204,10 +211,15 @@ export default class GlUi {
                     }
                 })
             }
-            for (let i = 0; i < exportBtns.length; i++) {
-                exportBtns[i].addEventListener('click', function (e) {
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].addEventListener('click', function (e) {
                     e.preventDefault();
-                    parent.exportToStl(e);
+                    if(e.target.id =='merge_selected'){
+                        parent.mainTransformControls.mergeSelected();
+                    }else{
+                        parent.exportToStl(e);
+                    }
+
                 })
             }
             for (let i = 0; i < checkboxButtons.length; i++) {
@@ -257,6 +269,10 @@ export default class GlUi {
                                     GUtils.CONTROLS.INCREMENTS.ROTATE = (val);
                                     break;
                                 }
+                                case 'increments-scale': {
+                                    GUtils.CONTROLS.INCREMENTS.SCALE = parseFloat(val);
+                                    break;
+                                }
                                 case 'increments-keyboard_translate': {
                                     GUtils.CONTROLS.INCREMENTS.KEYBOARD_TRANSLATE = parseFloat(val);
                                 }
@@ -277,6 +293,8 @@ export default class GlUi {
 
                 } else if (dataset.partSelect) {
                     parent._events.onSelectPart(self.getMeshByUUID(dataset.partSelect));
+                }else if (dataset.partSeparate) {
+                    parent.mainTransformControls.separateBackModels(self.getMeshByUUID(dataset.partSeparate));
                 } else if (dataset.partCopy) {
                     new DuplicatePart(self.getMeshByUUID(dataset.partCopy))
                 } else if (dataset.partViewThickness) {
@@ -324,13 +342,18 @@ export default class GlUi {
                 <div class="d-flex f-r s-a part-item-info fullWidth">
                      <label class="part-title" data-part-select="${mesh.uuid}">
                      <input type="checkbox" data-part-select="${mesh.uuid}"> ${mesh.name}</label>
-                     <div class="actions">
+                     <div class="actions d-flex">
                          <button data-part-delete="${mesh.uuid}">
-                         <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
+                            <i class="fa fa-trash fa-lg" data-part-delete="${mesh.uuid}"></i>
                          </button>
                          <button data-part-copy="${mesh.uuid}">
-                         <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
+                            <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
                          </button>
+                        ${mesh._control.geoemtryTomerge?(`
+                         <button data-part-separate="${mesh.uuid}">
+                            Separate
+                         </button>
+                        `):''}
                      </div>
                  </div>
                 <fieldset id="group1" class="fullWidth">

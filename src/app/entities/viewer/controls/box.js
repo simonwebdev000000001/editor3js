@@ -11,14 +11,17 @@ export default class BoxControls {
             this.controls.geometry.computeBoundingBox();
             this.controls._center = this.controls.geometry.boundingSphere.center;
 
+            tempStore.children
         } else {
             let mesh = tempStore.children[0];
             this.controls = mesh._helper;
+            mesh._helper.visible = true;
+            while (this.controls.children.length) this.controls.remove(this.controls.children[0]);//remove all controls, line rotations, scaling
 
-            while (this.controls.children.length) this.controls.remove(this.controls.children[0]);
             // this.controls.matrix.identity();
             // this.controls.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
         }
+
 
         this.controls._tempStore = tempStore;
         this.viewer = viewer;

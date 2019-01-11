@@ -49,7 +49,6 @@ class Model {
         let octree = this.getOctree();
 
 
-
         // make sure the world matrix is up to date
         this.baseMesh.updateMatrixWorld();
 
@@ -92,7 +91,7 @@ class Model {
 
 export default class ModelPart extends Model {
 
-    constructor(viewer, {orGeometry, name, shouldRecalcCenter}) {
+    constructor(viewer, {orGeometry, name, shouldRecalcCenter,geoemtryTomerge}) {
         super(viewer);
         let center;
         if (shouldRecalcCenter) {
@@ -104,12 +103,14 @@ export default class ModelPart extends Model {
             mesh = this.mesh = this.baseMesh = new THREE.Mesh(orGeometry, this.materials.base);
 
 
+        this.geoemtryTomerge = geoemtryTomerge;
         mesh._geometry = new THREE.Geometry().fromBufferGeometry(orGeometry);
         mesh.buffer_geometry = orGeometry;
 
         if (shouldRecalcCenter) mesh.position.copy(center.negate());
-        mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.GRAY);
+        mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.YELLOW);
         mesh._helper.geometry.computeBoundingBox();
+        mesh._helper.material.visible = false;
         mesh.isIntersectable = true;
         mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
@@ -141,8 +142,8 @@ export default class ModelPart extends Model {
 
             // translateMin.negate();
             // geo.translate(translateMin.x, translateMin.y, translateMin.z);
-            translateMin.add(position)
-            translateMin.add(distance)
+            translateMin.add(position);
+            translateMin.add(distance);
             let delta = 0;
             for (let i = 0; i < copy.x; i++) {
                 for (let j = 0; j < copy.z; j++) {
@@ -305,6 +306,7 @@ export default class ModelPart extends Model {
             child.material = child._material;
             child._last_controls = child.parent;
             THREE.SceneUtils.detach(child, child.parent, child._orParent);
+            child._helper.position.copy(child.position);
             // child._helper.last_center = child.position.clone();
             // child._helper.position.copy(child.position.clone());
         }
@@ -326,6 +328,9 @@ export default class ModelPart extends Model {
     updateLabel() {
         this.updateLabelPosition();
         this.updateLabelVisibilty();
+    }
+    updateBoundingBoxTransform(){
+
     }
 
     updateLabelPosition() {

@@ -129,7 +129,7 @@ export class Measure {
     constructor() {
         this.MAX_POINT_COUNT = 2;
         this.container = new THREE.Object3D();
-        this.container._material = new THREE.MeshPhongMaterial({color: GUtils.randomColor()});
+        this.container._material = new THREE.MeshPhongMaterial({color: '#6d7c8b'});
     }
 
     clear() {

@@ -151,6 +151,7 @@ export default class ScaleControls extends GLControls {
         if (planeIntersect === false) return;
 
         pointEnd.copy(planeIntersect.point).sub(worldPositionStart);
+        pointEnd.addScalar(pointEnd.distanceTo(pointStart) *GUtils.CONTROLS.INCREMENTS.SCALE);
 
         if (axis.search('XYZ') !== -1) {
 
@@ -176,6 +177,7 @@ export default class ScaleControls extends GLControls {
 
         }
         // Apply scale
+
         object.scale.copy(_scaleStart).multiply(_tempVector);
     }
 

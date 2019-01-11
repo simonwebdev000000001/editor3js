@@ -415,10 +415,11 @@ export class MEvents extends GLMain {
         transformControls.lastSelected = object;
         if (transformControls.tempParent) {
             transformControls.tempParent.updateMatrixWorld();
+            this.main.temp_model.updateMatrixWorld();
             for (let i = 0, list = transformControls.tempParent.children; i < list.length; i++) {
                 let child = list[i];
                 if (child.isIntersectable) {
-                    i--;
+
                     listOfmodels.push(child);
                     this.deselectFromControls(child);
                     parent = child.parent;
@@ -426,6 +427,7 @@ export class MEvents extends GLMain {
                     child.updateMatrixWorld();
                     THREE.SceneUtils.detach(child, child.parent, this.main.temp_model);
                 }
+                i--;
             }
             transformControls.tempParent.parent.remove(transformControls.tempParent);
             transformControls.tempStore.parent.remove(transformControls.tempStore);
@@ -462,14 +464,14 @@ export class MEvents extends GLMain {
 
         listOfmodels.forEach((el) => {
             tempStore.add(el);
-        })
+        });
 
         if (transformControls.tempParent._box) transformControls.tempParent._box.remove();
         transformControls.tempParent._box = new BoxControls({tempStore, viewer: this.main});
 
 
-        let items = [
 
+        let items = [
             ...listOfmodels,
             transformControls.tempParent._box.controls
         ];
@@ -479,6 +481,18 @@ export class MEvents extends GLMain {
         // transformControls.tempParent.add(new THREE.AxesHelper(100))
 
         transformControls.tempParent.updateMatrixWorld();
+
+        if(tempStore.children.length>1){
+            tempStore.children.forEach((mesh)=>{
+                if(mesh._helper){
+                    while (mesh._helper.children.length){
+                        mesh._helper.remove(mesh._helper.children[0]);
+                    }
+                    items.push((mesh._helper));
+                    mesh._helper.visible = false;
+                }
+            })
+        }
         items.forEach((el) => {
             if (el._control) {
                 el._control.toggleSelect(true, tempStore, transformControls.tempParent);
@@ -486,7 +500,6 @@ export class MEvents extends GLMain {
                 el.updateMatrixWorld();
                 el.material = main.model._selectedMaterial.clone();
                 THREE.SceneUtils.attach(el, this.main.model, transformControls.tempParent);
-                // transformControls.tempParent.add(el);
             }
 
         });
@@ -528,17 +541,14 @@ export class MEvents extends GLMain {
 
         if (this.TOOL > 0) {
             this._pointerConductor.addPoint(this.lastInter, this.TOOL);
-            return ;//this.Utils.Config.onEventPrevent(ev, true);
+            return;//this.Utils.Config.onEventPrevent(ev, true);
         }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
-                let object,
-                    parent,
-                    shouldKeepleftitems = false,
-                    transformControls = this.main.transformControls;
+                let object ;
                 if (intersects.length) {
                     object = (intersects[0]).object;
-                    parent = object.parent;
+                    if(object._category != GUtils.CATEGORIES.STL_LOADED_PART)object=null;
                 }
                 this.onSelectPart(object);
             });

@@ -5,6 +5,7 @@ import {MStorage} from "../helpers/MStorage.js";
 import {resolve} from "path";
 import GUtils from "../utils";
 import CubeCameraView from "./controls/cube_camera";
+import MainTransformControls from "./controls/main_transform";
 
 import ModelPart from './modelPart';
 import GlUi from "./glUI";
@@ -244,6 +245,7 @@ export class GlViewer {
         this.controls.autoRotateSpeed = 0.10;
         this.controls.constraint.smoothZoom = true;
         this.controls.constraint.zoomDampingFactor = this.controls.zoomDampingFactor = 0.12;
+        this.mainTransformControls = new MainTransformControls(this);
 
 
         controls.autoRotate = controls.enableZoom = true;
@@ -255,7 +257,7 @@ export class GlViewer {
         controls.rotateSpeedUP = 0.06493;
         //controls.zoomSpeed = 0.87;
         //if (isMobile) controls.zoomSpeed = 1;
-        controls.enableKeys = false
+        controls.enableKeys = false;
         // controls.maxPolarAngle = Math.PI * 0.461;
         controls.addEventListener('change', (e) => {
             this.refresh();
@@ -769,7 +771,6 @@ export class GlViewer {
                 _el.position.y = -1;
                 _el.position.x = -1;
                 this.createLight(2);
-
 
 
                 // if (this._datGui) this._datGui.addlight(_el);
