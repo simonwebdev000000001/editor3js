@@ -116,7 +116,8 @@ gulp.task('js:build', function () {
             gulp.src(paths + "threejs/octree.js"),
             // gulp.src(paths + "threejs/RGBELoader.js"),
             // gulp.src(paths + "threejs/HDRCubeTextureLoader.js"),
-            // gulp.src(paths + "dat.gui.min.js"),
+            gulp.src(paths + "dat.gui.min.js"),
+            gulp.src(paths + "meshy/supportGenerator.js"),
             gulp.src(paths + "threejs/STLLoader.js"),
             gulp.src(paths + "threejs/BufferGeometryUtils.js"),
             // gulp.src(paths + "fabric.min.js"),
@@ -133,8 +134,10 @@ gulp.task('js:build', function () {
             gulp.src(paths + "threejs/DragControls.js"),
 
             gulp.src(paths + "Tween.js"),
-            gulp.src(paths + "calculate.js"),
-            gulp.src(paths + "utils.js"),
+            gulp.src(paths + "meshy/calculate.js"),
+            gulp.src(paths + "meshy/utils.js"),
+            gulp.src(paths + "meshy/priority-queue.min.js"),
+            // gulp.src(paths + "meshy/printout.js"),
 
 
             // gulp.src("bower_components/stackblur-canvas/dist/stackblur.js")

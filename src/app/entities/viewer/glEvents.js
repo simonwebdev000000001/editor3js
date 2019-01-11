@@ -412,6 +412,7 @@ export class MEvents extends GLMain {
         //     transformControls.lastSelected._box.parent.remove(transformControls.lastSelected._box);
         // }
 
+        this.main.datGui.model = object ? object._control : false;
         transformControls.lastSelected = object;
         if (transformControls.tempParent) {
             transformControls.tempParent.updateMatrixWorld();
@@ -470,7 +471,6 @@ export class MEvents extends GLMain {
         transformControls.tempParent._box = new BoxControls({tempStore, viewer: this.main});
 
 
-
         let items = [
             ...listOfmodels,
             transformControls.tempParent._box.controls
@@ -482,10 +482,10 @@ export class MEvents extends GLMain {
 
         transformControls.tempParent.updateMatrixWorld();
 
-        if(tempStore.children.length>1){
-            tempStore.children.forEach((mesh)=>{
-                if(mesh._helper){
-                    while (mesh._helper.children.length){
+        if (tempStore.children.length > 1) {
+            tempStore.children.forEach((mesh) => {
+                if (mesh._helper) {
+                    while (mesh._helper.children.length) {
                         mesh._helper.remove(mesh._helper.children[0]);
                     }
                     items.push((mesh._helper));
@@ -545,10 +545,10 @@ export class MEvents extends GLMain {
         }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
-                let object ;
+                let object;
                 if (intersects.length) {
                     object = (intersects[0]).object;
-                    if(object._category != GUtils.CATEGORIES.STL_LOADED_PART)object=null;
+                    if (object._category != GUtils.CATEGORIES.STL_LOADED_PART) object = null;
                 }
                 this.onSelectPart(object);
             });

@@ -9,6 +9,7 @@ import MainTransformControls from "./controls/main_transform";
 
 import ModelPart from './modelPart';
 import GlUi from "./glUI";
+import DatGui from "./glUI/dat.gui";
 import * as HOOKS from "./hooks";
 
 /**
@@ -65,6 +66,8 @@ export class GlViewer {
         this._ui = new GlUi(_self);
 
 
+        this.datGui = new DatGui(this);
+        this.mainTransformControls = new MainTransformControls(this);
         this._events = new MEvents(this);
         this.initControls();
         this._animation = new Animation(this);
@@ -245,7 +248,6 @@ export class GlViewer {
         this.controls.autoRotateSpeed = 0.10;
         this.controls.constraint.smoothZoom = true;
         this.controls.constraint.zoomDampingFactor = this.controls.zoomDampingFactor = 0.12;
-        this.mainTransformControls = new MainTransformControls(this);
 
 
         controls.autoRotate = controls.enableZoom = true;

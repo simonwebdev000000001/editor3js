@@ -1,4 +1,5 @@
 import GUtils from "../../utils";
+import SupportTools from "./supportTools";
 
 let copies = 0;
 
@@ -31,8 +32,8 @@ class Model {
         this.baseMesh.geometry.colorsNeedUpdate = true;
     }
 
-    getOctree() {
-        if (!this.octree) this.octree = new Octree(this.baseMesh);
+    getOctree(simpleMesh) {
+        if (!this.octree) this.octree = new Octree(simpleMesh || this.baseMesh);
 
         return this.octree;
     }
@@ -87,11 +88,13 @@ class Model {
         this.baseMesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         this.baseMesh.geometry = this.baseMesh.buffer_geometry;
     }
+
+
 }
 
 export default class ModelPart extends Model {
 
-    constructor(viewer, {orGeometry, name, shouldRecalcCenter,geoemtryTomerge}) {
+    constructor(viewer, {orGeometry, name, shouldRecalcCenter, geoemtryTomerge}) {
         super(viewer);
         let center;
         if (shouldRecalcCenter) {
@@ -194,10 +197,19 @@ export default class ModelPart extends Model {
             // })
 
         }
+
+        this.supportTools = new SupportTools(this);
         this._addLabelPositin();
         this.toggleViewLabel();
         this.updateLabel();
         this.updateLabelValue();
+    }
+
+    baseSimpleMesh() {
+        let newMeshGeo = new THREE.Geometry().fromBufferGeometry(this.baseMesh.geometry),
+            mesh = new THREE.Mesh(newMeshGeo, this.baseMesh.material);
+        this.baseMesh.matrix.decompose(mesh.position, mesh.rotation, mesh.scale);
+        return mesh;
     }
 
     remove() {
@@ -329,7 +341,8 @@ export default class ModelPart extends Model {
         this.updateLabelPosition();
         this.updateLabelVisibilty();
     }
-    updateBoundingBoxTransform(){
+
+    updateBoundingBoxTransform() {
 
     }
 
@@ -356,3 +369,4 @@ export default class ModelPart extends Model {
         }
     }
 }
+
