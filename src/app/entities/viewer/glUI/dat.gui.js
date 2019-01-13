@@ -1,5 +1,7 @@
+import EditStack from '../editStack/idnex';
+
 export default class DatGui {
-    constructor() {
+    constructor(viewer) {
         let gui = this.gui = new dat.GUI();
         gui.domElement.parentNode.style.right = '110px';
 
@@ -22,9 +24,15 @@ export default class DatGui {
             sqrt: SupportGenerator.RadiusFunctions.sqrt
         };
 
-        this.printout = console;//new Printout();
+        // this.printout = console;//new Printout();
+        this.printout = new Printout(6,viewer.container);
+        this.editStack = new EditStack(this.printout);
 
         this.buildSupportSliceFolder();
+        this.gui.add(this, "undo").name("Undo")
+            .title("Undo the last edit action.");
+        this.gui.add(this, "redo").name("Redo")
+            .title("Redo the previous undo.");
     }
 
     generateSupports = function() {
@@ -103,5 +111,23 @@ export default class DatGui {
             .title("Generate the supports.");
         folder.add(this, "removeSupports").name("Remove supports")
             .title("Remove generated supports.");
+    }
+
+
+    undo(){
+        try {
+            this.editStack.undo();
+        }
+        catch (e) {
+            this.printout.warn(e);
+        }
+    }
+    redo(){
+        try {
+            this.editStack.redo();
+        }
+        catch (e) {
+            this.printout.warn(e);
+        }
     }
 }

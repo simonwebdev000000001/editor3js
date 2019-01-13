@@ -31,10 +31,9 @@ export default class BoxControls {
             _width: v1.distanceTo(new THREE.Vector3(v2.x, v1.y, v1.z)),
             _depth: v1.distanceTo(new THREE.Vector3(v1.x, v2.y, v1.z)),
             _height: v1.distanceTo(new THREE.Vector3(v1.x, v1.y, v2.z))
-        }
+        };
         this._addBoxLines();
         this._addTranslatePivot();
-
 
         if (countOfItems > 1 || !this.controls.isOnePart) {
             this.controls.isOnePart = true;
@@ -43,7 +42,7 @@ export default class BoxControls {
             );
         }else if(this.controls.isOnePart ){
             let mesh = tempStore.children[0];
-            // mesh.updateMatrix();
+            mesh.updateMatrix();
             // viewer.transformControls.tempParent.position.copy(mesh.position);
             // this.controls.position.copy(mesh.position);
             // this.controls.geometry.translate(mesh.position.x,mesh.position.y,mesh.position.z);
@@ -52,6 +51,7 @@ export default class BoxControls {
             // viewer.transformControls.tempParent.rotation.copy(mesh.rotation);
             // viewer.transformControls.tempParent.position.copy(mesh.position.clone().negate());
             mesh.matrix.decompose(viewer.transformControls.tempParent.position, viewer.transformControls.tempParent.quaternion, viewer.transformControls.tempParent.scale);
+
             // mesh.matrix.decompose(this.controls.position, this.controls.quaternion, this.controls.scale);
 
             // mesh.matrix.identity();

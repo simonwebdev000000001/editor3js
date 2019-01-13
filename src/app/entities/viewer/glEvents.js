@@ -320,6 +320,7 @@ export class MEvents extends GLMain {
     _onDeletePart(mesh) {
         this.onSelectPart();
         mesh._control.remove();
+        this.main.datGui.editStack.clear();
     }
 
     onSelectPart(object) {
@@ -480,6 +481,7 @@ export class MEvents extends GLMain {
         // );
         // transformControls.tempParent.add(new THREE.AxesHelper(100))
 
+
         transformControls.tempParent.updateMatrixWorld();
 
         if (tempStore.children.length > 1) {
@@ -493,6 +495,7 @@ export class MEvents extends GLMain {
                 }
             })
         }
+
         items.forEach((el) => {
             if (el._control) {
                 el._control.toggleSelect(true, tempStore, transformControls.tempParent);
@@ -503,12 +506,11 @@ export class MEvents extends GLMain {
             }
 
         });
-
         transformControls.attach(transformControls.tempParent);
 
         transformControls.traverse((ch) => {
             if (ch.type == "Mesh") transformControls.renderOrder = 1;
-        })
+        });
     }
 
     onMouseUp(ev, acc) {

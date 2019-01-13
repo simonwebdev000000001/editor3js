@@ -109,11 +109,13 @@ export default class ScaleControls extends GLControls {
                 self.updateMtrix();
                 self.pointerDown(self.getPointer(ev));
                 self.initLabels(this);
+                self.controls.viewer.snapShotTransform(true);
             }
             mesh._mouseup = cone._mouseup = function (ev) {
                 this.material.opacity = 0.7;
                 self.removeLabels();
                 self.pointerUp();
+                self.controls.viewer.snapShotTransform();
             }
             mesh._mousemove = cone._mousemove = function (ev) {
                 document.body.style.cursor = 'col-resize';

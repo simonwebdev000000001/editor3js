@@ -48,6 +48,7 @@ export default class BoxEdge extends GLControls{
             self.updateMtrix();
             self.pointerDown(self.getPointer(ev));
             self.initRotateLabel();
+            parent.viewer.snapShotTransform(true);
         }
         edge._mouseup = function (ev) {
             ev.target.style.cursor = '';
@@ -57,6 +58,7 @@ export default class BoxEdge extends GLControls{
             edge.material.color = edge.material.defcolor;
             self.removeLabels();
             self.pointerUp();
+            parent.viewer.snapShotTransform();
         }
         edge._mouseover = function (ev) {
             if (!edge.material._color) {

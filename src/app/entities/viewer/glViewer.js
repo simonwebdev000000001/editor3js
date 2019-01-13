@@ -60,7 +60,6 @@ export class GlViewer {
 
         //this.loadModel(()=> {})
         this.loadedModels = 0;
-
         _self.materialType = 3;
         _self.updateMaterials();
         this._ui = new GlUi(_self);
@@ -239,7 +238,8 @@ export class GlViewer {
     }
 
     initControls() {
-        let {camera} = this,
+        let self = this,
+            {camera} = self,
             renderer = this.gl;
         let controls = this.controls = new THREE.OOrbitControls(camera, renderer.domElement);
         this.controls.constraint.smoothZoomSpeed = this.controls.smoothZoomSpeed = 5.0;
@@ -279,10 +279,12 @@ export class GlViewer {
         transformControls.addEventListener('mouseDown', (...e) => {
             dragControls.enabled = false;
             transformControls.tempParent._box.onStartTranslate();
+            self.snapShotTransform(true);
         });
         transformControls.addEventListener('mouseUp', () => {
             dragControls.enabled = true;
             transformControls.tempParent._box.onEndTranslate();
+            self.snapShotTransform();
         });
         transformControls.addEventListener('change', () => {
             if (transformControls.tempParent) {
@@ -307,10 +309,13 @@ export class GlViewer {
 
             controls.enabled = transformControls.enabled = false;
 
+            self.snapShotTransform(true);
+
         });
         dragControls.addEventListener('dragend', function () {
 
             controls.enabled = transformControls.enabled = true;
+            self.snapShotTransform();
 
         });
         dragControls.addEventListener('drag', () => {
@@ -372,6 +377,53 @@ export class GlViewer {
 
     }
 
+    snapShotTransform(isStart){
+        let self = this,
+            {transformControls} = self;
+        self.scene.updateMatrixWorld();
+        if(isStart){
+            self.datGui.editStack.startEditState = {
+                apply: function () {
+                    self._events.onSelectPart();
+                    this.elements.forEach(({mesh, matrix}) => {
+                        matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+                        mesh.updateMatrix();
+                    })
+                },
+                elements: []
+            };
+            transformControls.tempParent.children.forEach((mesh) => {
+                mesh.parent.updateMatrixWorld();
+                self.datGui.editStack.startEditState.elements.push({
+                    mesh,
+                    matrix: mesh.matrixWorld.clone()
+                });
+            });
+        }else{
+            let transform = {
+                startEditState: self.datGui.editStack.startEditState,
+                endEditState: {
+                    elements: [],
+                    apply: function () {
+                        self._events.onSelectPart();
+                        this.elements.forEach(({mesh, matrix}) => {
+                            matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+                            mesh.updateMatrix();
+                        })
+                    }
+                }
+            };
+            transformControls.tempParent.children.forEach((mesh) => {
+                mesh.parent.updateMatrixWorld();
+                transform.endEditState.elements.push({
+                    mesh,
+                    matrix: mesh.matrixWorld.clone()
+                });
+            });
+
+            self.datGui.editStack.push(transform);
+        }
+    }
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();

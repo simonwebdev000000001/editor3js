@@ -137,7 +137,8 @@ gulp.task('js:build', function () {
             gulp.src(paths + "meshy/calculate.js"),
             gulp.src(paths + "meshy/utils.js"),
             gulp.src(paths + "meshy/priority-queue.min.js"),
-            // gulp.src(paths + "meshy/printout.js"),
+            gulp.src(paths + "meshy/transform.js"),
+            gulp.src(paths + "meshy/printout.js"),
 
 
             // gulp.src("bower_components/stackblur-canvas/dist/stackblur.js")
