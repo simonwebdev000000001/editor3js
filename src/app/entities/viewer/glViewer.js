@@ -78,10 +78,10 @@ export class GlViewer {
 
     toScreenPosition(obj) {
         let {camera, gl} = this;
-        var vector = new THREE.Vector3();
+        let vector = new THREE.Vector3();
 
-        var widthHalf = 0.5 * gl.context.canvas.width;
-        var heightHalf = 0.5 * gl.context.canvas.height;
+        let widthHalf = 0.5 * gl.context.canvas.width;
+        let heightHalf = 0.5 * gl.context.canvas.height;
 
         obj.updateMatrixWorld();
         vector.setFromMatrixPosition(obj.matrixWorld);
@@ -126,12 +126,40 @@ export class GlViewer {
 
     loadStlFile(url, name) {
         return new Promise((resolve, reject) => {
-            let self = this;
-            var loader = new THREE.STLLoader();
+            const self = this;
+            const loader = new THREE.STLLoader();
             loader.load(url, (orGeometry) => {
                 if (GUtils.SETTINGS.SHOULD_FILL) this.fillMeshInChamber(orGeometry);
 
-                new ModelPart(this, {orGeometry, name, shouldRecalcCenter: true});
+                const model = new ModelPart(this, {orGeometry, name, shouldRecalcCenter: true});
+                self.datGui.editStack.push({
+                    startEditState: {
+                        elements: [model.baseMesh],
+                        apply: function () {
+                            const mesh = this.elements[0];
+                            self._events._onDeletePart(mesh, true);
+                            mesh.updateMatrixWorld();
+                            mesh.updateMatrix();
+                        }
+                    },
+                    endEditState: {
+                        elements: [model.baseMesh],
+                        apply: function () {
+                            const mesh = this.elements[0];
+                            const modelNew = new ModelPart(self, {
+                                fromMesh: mesh,
+                                orGeometry: mesh.geometry,
+                                name: mesh.name
+                            });
+
+
+                            model.viewer.datGui.editStack.refreshHistoryModel(
+                                [mesh, mesh._helper],
+                                [modelNew.baseMesh, modelNew.baseMesh._helper]
+                            );
+                        }
+                    }
+                });
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
@@ -377,11 +405,21 @@ export class GlViewer {
 
     }
 
-    snapShotTransform(isStart){
+    editModelMesh(mesh) {
+        let res;
+        this.scene.traverse((el) => {
+            if (mesh.name == el.name) {
+                return res = el;
+            }
+        });
+        return res;
+    }
+
+    snapShotTransform(isStart) {
         let self = this,
             {transformControls} = self;
         self.scene.updateMatrixWorld();
-        if(isStart){
+        if (isStart) {
             self.datGui.editStack.startEditState = {
                 apply: function () {
                     self._events.onSelectPart();
@@ -399,7 +437,7 @@ export class GlViewer {
                     matrix: mesh.matrixWorld.clone()
                 });
             });
-        }else{
+        } else {
             let transform = {
                 startEditState: self.datGui.editStack.startEditState,
                 endEditState: {
@@ -424,6 +462,7 @@ export class GlViewer {
             self.datGui.editStack.push(transform);
         }
     }
+
     initScene() {
         let scene = this.scene = new THREE.Scene();
         this.model = new THREE.Object3D();

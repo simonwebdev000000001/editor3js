@@ -26,7 +26,7 @@ export default class DatGui {
 
         // this.printout = console;//new Printout();
         this.printout = new Printout(6,viewer.container);
-        this.editStack = new EditStack(this.printout);
+        this.editStack = new EditStack(viewer);
 
         this.buildSupportSliceFolder();
         this.gui.add(this, "undo").name("Undo")
@@ -119,7 +119,11 @@ export default class DatGui {
             this.editStack.undo();
         }
         catch (e) {
+            if(e.message){
+                this.editStack.clear();
+            }
             this.printout.warn(e);
+            console.error(e);
         }
     }
     redo(){
@@ -127,7 +131,11 @@ export default class DatGui {
             this.editStack.redo();
         }
         catch (e) {
+            if(e.message){
+                this.editStack.clear();
+            }
             this.printout.warn(e);
+            console.error(e);
         }
     }
 }

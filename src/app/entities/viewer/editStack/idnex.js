@@ -1,10 +1,43 @@
 export default class EditStack {
-    constructor(){
+    constructor(viewer) {
         this.history = [];
-        this.pos = -1
+        this.pos = -1;
+        this.viewer = viewer;
     }
+
+    refreshHistoryModel(oldMesh, newMesh) {
+        this.history.forEach((historyItem) => {
+            let list = [
+                historyItem.transform.startEditState.elements,
+                historyItem.transform.endEditState.elements
+            ];
+
+            for (let i = 0; i < list.length; i++) {
+                for (let j = 0; j < list[i].length; j++) {
+                    let elementTrsnform = list[i][j];
+                    let meshName = elementTrsnform.uuid;
+                    if (elementTrsnform.mesh) {
+                        meshName = elementTrsnform.mesh.uuid;
+                    }
+                    for (let k = 0; k < oldMesh.length; k++) {
+                        if (oldMesh[k].uuid === meshName) {
+                            if (elementTrsnform.mesh) {
+                                elementTrsnform.mesh = newMesh[k];
+                            } else {
+                                list[i].splice(j, 1, newMesh[k]);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+        debugger
+    }
+
     // Get the inverse transform at current positition and apply it.
-    undo () {
+    undo() {
         if (this.pos < 0) {
             throw "No undo history available.";
         }
@@ -12,7 +45,7 @@ export default class EditStack {
         var entry = this.history[this.pos--];
 
         // apply inverse
-        entry.transform.startEditState.apply();
+        entry.transform.startEditState.apply(entry);
         // entry.transform.end();
         //
         // // if update function exists, call it
@@ -20,15 +53,15 @@ export default class EditStack {
     }
 
     // Get the transform at the next position and apply it.
-    redo () {
-        if (this.pos >= this.history.length-1) {
+    redo() {
+        if (this.pos >= this.history.length - 1) {
             throw "No redo history available.";
         }
 
         var entry = this.history[++this.pos];
 
         // apply the transform and update function if given
-        entry.transform.endEditState.apply();
+        entry.transform.endEditState.apply(entry);
         // entry.transform.end();
 
         // if update function exists, call it
@@ -36,7 +69,7 @@ export default class EditStack {
     }
 
     // Put a new transform onto the stack.
-    push (transform, onTransform) {
+    push(transform, onTransform) {
         if (this.pos < this.history.length - 1) {
             // effectively deletes all entries after this.pos
             this.history.length = this.pos + 1;
@@ -49,7 +82,7 @@ export default class EditStack {
     }
 
     // Clear the stack.
-    clear () {
+    clear() {
         this.history.length = 0;
         this.pos = -1;
     }

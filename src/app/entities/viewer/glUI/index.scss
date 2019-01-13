@@ -12,7 +12,17 @@
       &:not([type=file]){
         max-width: 50px;
       }
-
+    }
+    label{
+      &.btn{
+        margin: 10px;
+        padding: 10px;
+        background: gray;
+        display: block;
+        text-align: center;
+        cursor: pointer;
+        color: white;
+      }
     }
     fieldset{
       *{
@@ -21,6 +31,7 @@
       h3{
         cursor: pointer;
       }
+
       .border-bottom{
         border-bottom: 1px solid gray;
         padding: 5px 0;

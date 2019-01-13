@@ -317,10 +317,9 @@ export class MEvents extends GLMain {
         }
     }
 
-    _onDeletePart(mesh) {
+    _onDeletePart(mesh,isHistory) {
         this.onSelectPart();
-        mesh._control.remove();
-        this.main.datGui.editStack.clear();
+        mesh._control.remove(isHistory);
     }
 
     onSelectPart(object) {

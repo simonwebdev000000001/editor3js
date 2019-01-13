@@ -18,7 +18,10 @@ export default class GlUi {
             fileContainer.innerHTML = `
            
             <form action="" class="" style="background:white">
-                <input type="file" name="myFile"  class="fullWidth"accept=".stl" multiple>
+               
+                <label class="btn btn-primary">
+                      Import <input type="file" name="myFile"  style="display: none" class="fullWidth" accept=".stl" multiple>
+                </label>
                  <fieldset id="group1">
                     <h3 class="field-desc">List of Parts</h3>
                     <div class="fields-list" id="part_list">

@@ -94,7 +94,7 @@ class Model {
 
 export default class ModelPart extends Model {
 
-    constructor(viewer, {orGeometry, name, shouldRecalcCenter, geoemtryTomerge}) {
+    constructor(viewer, {orGeometry, name, fromMesh, shouldRecalcCenter, geoemtryTomerge}) {
         super(viewer);
         let center;
         if (shouldRecalcCenter) {
@@ -111,9 +111,12 @@ export default class ModelPart extends Model {
         mesh.buffer_geometry = orGeometry;
 
         if (shouldRecalcCenter) mesh.position.copy(center.negate());
+        if (fromMesh) fromMesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.YELLOW);
         mesh._helper.geometry.computeBoundingBox();
         mesh._helper.material.visible = false;
+        mesh._helper.name = name + Date.now();
         mesh.isIntersectable = true;
         mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
@@ -212,12 +215,39 @@ export default class ModelPart extends Model {
         return mesh;
     }
 
-    remove() {
+    remove(isHistory) {
         this.mesh.parent.remove(this.mesh);
 
         this.labelContainer.innerHTML = "";
         this.labelContainer.parentNode.removeChild(this.labelContainer);
         if (this.mesh._onHtmlDeletePart) this.mesh._onHtmlDeletePart();
+
+        if (isHistory) return;
+        const model = this;
+        this.viewer.datGui.editStack.push({
+            startEditState: {
+                elements: [model.baseMesh],
+                apply: function () {
+                    const mesh = this.elements[0];
+                    const modelNew = new ModelPart(model.viewer, {
+                        orGeometry: mesh.geometry,
+                        name: mesh.name,
+                        shouldRecalcCenter: true
+                    });
+                    mesh.matrix.decompose(modelNew.baseMesh.position, modelNew.baseMesh.quaternion, modelNew.baseMesh.scale);
+                    model.viewer.datGui.editStack.refreshHistoryModel(mesh, modelNew.baseMesh);
+                }
+            },
+            endEditState: {
+                elements: [model.baseMesh],
+                apply: function (curState) {
+                    const mesh = this.elements[0];
+                    model.viewer._events._onDeletePart(mesh);
+                    mesh.updateMatrixWorld();
+                    mesh.updateMatrix();
+                }
+            }
+        });
     }
 
     checkIfColision() {
@@ -249,6 +279,7 @@ export default class ModelPart extends Model {
 
         let mesh = this.mesh._label_pivot = new THREE.Mesh(new THREE.SphereBufferGeometry(1, 1, 1));
         mesh.visible = false;
+
         // mesh.scale.multiplyScalar(10);
         let v1 = helper.geometry.boundingSphere.center.clone(),
             v2 = helper.geometry.boundingBox.min.clone(),
