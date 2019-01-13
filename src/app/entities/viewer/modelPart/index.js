@@ -111,7 +111,7 @@ export default class ModelPart extends Model {
         mesh.buffer_geometry = orGeometry;
 
         if (shouldRecalcCenter) mesh.position.copy(center.negate());
-        if (fromMesh){
+        if (fromMesh) {
             fromMesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
             mesh.updateMatrix();
 
@@ -125,18 +125,21 @@ export default class ModelPart extends Model {
         mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
         mesh.name = name;
-        if (fromMesh){
+        if (fromMesh) {
             mesh._helper.isOnePart = true;
         }
         mesh._control = this;
         if (viewer._ui) {
             viewer._ui.onLoadPart(mesh);
         }
-        mesh._onDublicate = function (settings) {
+        mesh._onDublicate = function (settings, isHistory) {
             let originMesh = this;
-            viewer._events._onDeletePart(originMesh);
+            originMesh._dublicats = [];
+            viewer._events._onDeletePart(originMesh, true);
             let geo = this.geometry.clone();
             geo.scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+            // let cloneMatrix = originMesh.matrixWorld.clone();
+            // geo.applyMatrix(cloneMatrix);//TODO: should use transform goemetry
 
             let
                 tempMesh = new THREE.Mesh(geo),
@@ -177,10 +180,17 @@ export default class ModelPart extends Model {
                         let geoCopy = geo.clone();
                         // geoCopy.translate(position.x, position.y, position.z);
                         // geoCopy.translate(position.x, position.y, position.z);
-                        let _model = new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
-                        _model.mesh.position.copy(_position);
+                        let tempMesh= new THREE.Mesh(new THREE.PlaneBufferGeometry(1,1));
+                        tempMesh.position.copy(_position);
+                        originMesh.matrix.decompose(new THREE.Vector3(), tempMesh.quaternion, new THREE.Vector3());
+                        tempMesh.updateMatrix();
+                        let _model = new ModelPart(viewer, {orGeometry: geoCopy, fromMesh:tempMesh, name: `${mesh.name}(${copies++})`});
+                        // _model.mesh.position.copy(_position);
+                        originMesh._dublicats.push(_model);
                         // _model.mesh.quaternion.copy(originMesh.quaternion)
-                        this.matrix.decompose(new THREE.Vector3(), _model.mesh.quaternion, new THREE.Vector3());
+
+                        _model.mesh.updateMatrixWorld();
+                        _model.mesh.updateMatrix();
                     }
                 }
             }
@@ -204,6 +214,43 @@ export default class ModelPart extends Model {
             //         new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
             //     }
             // })
+
+            if (isHistory) return;
+            viewer.datGui.editStack.push({
+                startEditState: {
+                    elements: [originMesh],
+                    apply: function () {
+                        const mesh = this.elements[0];
+                        mesh._dublicats.forEach((dublicate) => {
+                            dublicate.remove(true);
+                        });
+                        const modelNew = new ModelPart(viewer, {
+                            fromMesh: mesh,
+                            orGeometry: mesh.geometry,
+                            name: mesh.name
+                        });
+                        modelNew.baseMesh._dublicats = mesh._dublicats;
+
+                        viewer.datGui.editStack.refreshHistoryModel(
+                            [mesh, mesh._helper],
+                            [modelNew.baseMesh, modelNew.baseMesh._helper]
+                        );
+                    }
+                },
+                endEditState: {
+                    elements: [originMesh],
+                    apply: function () {
+                        const mesh = this.elements[0];
+                        const {_dublicats} = mesh;
+                        mesh._onDublicate(settings, true);
+
+                        viewer.datGui.editStack.refreshHistoryModel(
+                            [..._dublicats.map((el)=>el.baseMesh), ..._dublicats.map((el) => el.baseMesh._helper)],
+                            [...mesh._dublicats.map((el)=>el.baseMesh), ...mesh._dublicats.map((el) => el.baseMesh._helper)],
+                        );
+                    }
+                }
+            });
 
         }
 
@@ -243,7 +290,9 @@ export default class ModelPart extends Model {
                         shouldRecalcCenter: true
                     });
                     mesh.matrix.decompose(modelNew.baseMesh.position, modelNew.baseMesh.quaternion, modelNew.baseMesh.scale);
-                    model.viewer.datGui.editStack.refreshHistoryModel(mesh, modelNew.baseMesh);
+                    model.viewer.datGui.editStack.refreshHistoryModel(
+                        [mesh, mesh._helper],
+                        [modelNew.baseMesh, modelNew.baseMesh._helper]);
                 }
             },
             endEditState: {
