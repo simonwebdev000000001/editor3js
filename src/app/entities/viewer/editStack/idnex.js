@@ -32,8 +32,7 @@ export default class EditStack {
                     }
                 }
             }
-        })
-        debugger
+        });
     }
 
     // Get the inverse transform at current positition and apply it.

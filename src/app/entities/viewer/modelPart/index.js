@@ -111,7 +111,11 @@ export default class ModelPart extends Model {
         mesh.buffer_geometry = orGeometry;
 
         if (shouldRecalcCenter) mesh.position.copy(center.negate());
-        if (fromMesh) fromMesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+        if (fromMesh){
+            fromMesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+            mesh.updateMatrix();
+
+        }
 
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.YELLOW);
         mesh._helper.geometry.computeBoundingBox();
@@ -121,7 +125,9 @@ export default class ModelPart extends Model {
         mesh._category = GUtils.CATEGORIES.STL_LOADED_PART;
         parent.add(mesh);
         mesh.name = name;
-
+        if (fromMesh){
+            mesh._helper.isOnePart = true;
+        }
         mesh._control = this;
         if (viewer._ui) {
             viewer._ui.onLoadPart(mesh);
