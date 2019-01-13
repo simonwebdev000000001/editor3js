@@ -27,7 +27,7 @@ export class MEvents extends GLMain {
         this.pathOnMove = 50;
         this.keyCode = [];
         let _self = this,
-            elem = main.gl.domElement,
+            elem = document,//main.gl.domElement,
             handler = (elem.addEventListener || elem.attachEvent).bind(elem),
             fullscreenEl = document.createElement('span');
         fullscreenEl.className = "glyphicon glyphicon-fullscreen fullscreen";
@@ -36,9 +36,9 @@ export class MEvents extends GLMain {
         });
         // main.container.appendChild(fullscreenEl);
         if (main.isMobile) {
-            handler(this.EVENTS_NAME.TOUCH_START, (e) => this.onMouseDown(e));
-            handler(this.EVENTS_NAME.TOUCH_END, (e) => this.onMouseUp(e));
-            handler(this.EVENTS_NAME.TOUCH_MOVE, (e) => this.onMouseMove(e));
+            handler(this.EVENTS_NAME.TOUCH_START, (e) => this.onMouseDown(e),false);
+            handler(this.EVENTS_NAME.TOUCH_END, (e) => this.onMouseUp(e),false);
+            handler(this.EVENTS_NAME.TOUCH_MOVE, (e) => this.onMouseMove(e),false);
         } else {
             handler(this.EVENTS_NAME.MOUSE_DOWN, (e) => this.onMouseDown(e));
             handler(this.EVENTS_NAME.MOUSE_UP, (e) => this.onMouseUp(e));
@@ -47,9 +47,9 @@ export class MEvents extends GLMain {
         }
 
 
-        handler(this.EVENTS_NAME.DRAG_OVER, (e) => this.onDragOver(e));
-        handler(this.EVENTS_NAME.DRAG_OUT, (e) => this.onDragOut(e));
-        handler(this.EVENTS_NAME.DRAG_END, (e) => this.onDrop(e));
+        handler(this.EVENTS_NAME.DRAG_OVER, (e) => this.onDragOver(e),false);
+        handler(this.EVENTS_NAME.DRAG_OUT, (e) => this.onDragOut(e),false);
+        handler(this.EVENTS_NAME.DRAG_END, (e) => this.onDrop(e),false);
 
         handler(this.EVENTS_NAME.DB_CLICK, (e) => this.onDbClick(e));
         handler(this.EVENTS_NAME.SELECT_START, this.Utils.Config.onEventPrevent);

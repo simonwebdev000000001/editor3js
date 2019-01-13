@@ -33,7 +33,7 @@ class Model {
     }
 
     getOctree(simpleMesh) {
-        if (!this.octree) this.octree = new Octree(simpleMesh || this.baseMesh);
+        if (!this.octree || simpleMesh) this.octree = new Octree(simpleMesh || this.baseMesh);
 
         return this.octree;
     }
@@ -217,7 +217,9 @@ export default class ModelPart extends Model {
     baseSimpleMesh() {
         let newMeshGeo = new THREE.Geometry().fromBufferGeometry(this.baseMesh.geometry),
             mesh = new THREE.Mesh(newMeshGeo, this.baseMesh.material);
-        this.baseMesh.matrix.decompose(mesh.position, mesh.rotation, mesh.scale);
+        // this.baseMesh.matrix.decompose(mesh.position, mesh.rotation, mesh.scale);
+        newMeshGeo.applyMatrix(this.baseMesh.matrixWorld);
+        mesh.updateMatrix();
         return mesh;
     }
 

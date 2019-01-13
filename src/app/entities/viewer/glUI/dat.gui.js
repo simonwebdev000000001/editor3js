@@ -55,6 +55,8 @@ export default class DatGui {
                 radiusFnK: this.supportRadiusFnK,
                 axis: this.sliceAxis
             });
+        }else{
+            this.printout.warn("Requiree selected model");
         }
     }
 

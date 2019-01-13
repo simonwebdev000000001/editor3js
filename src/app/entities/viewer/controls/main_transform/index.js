@@ -35,6 +35,8 @@ export default class MainTransformControls {
                 shouldRecalcCenter: true,
                 geoemtryTomerge
             });
+            //:TODO temporary disable stack
+            this.viewer.datGui.editStack.clear();
         }
     }
 
@@ -73,6 +75,9 @@ export default class MainTransformControls {
                     shouldRecalcCenter: true
                 });
             });
+
+            //:TODO temporary disable stack
+            this.viewer.datGui.editStack.clear();
         }
 
     }

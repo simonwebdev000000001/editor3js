@@ -290,7 +290,6 @@ THREE.TransformControls = function (camera, domElement) {
 
     this.pointerMove = function (pointer) {
 
-
         var axis = this.axis;
         var mode = this.mode;
         var object = this.object;
