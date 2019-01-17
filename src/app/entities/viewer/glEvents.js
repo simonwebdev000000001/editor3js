@@ -36,9 +36,9 @@ export class MEvents extends GLMain {
         });
         // main.container.appendChild(fullscreenEl);
         if (main.isMobile) {
-            handler(this.EVENTS_NAME.TOUCH_START, (e) => this.onMouseDown(e),false);
-            handler(this.EVENTS_NAME.TOUCH_END, (e) => this.onMouseUp(e),false);
-            handler(this.EVENTS_NAME.TOUCH_MOVE, (e) => this.onMouseMove(e),false);
+            handler(this.EVENTS_NAME.TOUCH_START, (e) => this.onMouseDown(e), false);
+            handler(this.EVENTS_NAME.TOUCH_END, (e) => this.onMouseUp(e), false);
+            handler(this.EVENTS_NAME.TOUCH_MOVE, (e) => this.onMouseMove(e), false);
         } else {
             handler(this.EVENTS_NAME.MOUSE_DOWN, (e) => this.onMouseDown(e));
             handler(this.EVENTS_NAME.MOUSE_UP, (e) => this.onMouseUp(e));
@@ -47,9 +47,9 @@ export class MEvents extends GLMain {
         }
 
 
-        handler(this.EVENTS_NAME.DRAG_OVER, (e) => this.onDragOver(e),false);
-        handler(this.EVENTS_NAME.DRAG_OUT, (e) => this.onDragOut(e),false);
-        handler(this.EVENTS_NAME.DRAG_END, (e) => this.onDrop(e),false);
+        handler(this.EVENTS_NAME.DRAG_OVER, (e) => this.onDragOver(e), false);
+        handler(this.EVENTS_NAME.DRAG_OUT, (e) => this.onDragOut(e), false);
+        handler(this.EVENTS_NAME.DRAG_END, (e) => this.onDrop(e), false);
 
         handler(this.EVENTS_NAME.DB_CLICK, (e) => this.onDbClick(e));
         handler(this.EVENTS_NAME.SELECT_START, this.Utils.Config.onEventPrevent);
@@ -317,7 +317,7 @@ export class MEvents extends GLMain {
         }
     }
 
-    _onDeletePart(mesh,isHistory) {
+    _onDeletePart(mesh, isHistory) {
         this.onSelectPart();
         mesh._control.remove(isHistory);
     }
@@ -589,12 +589,13 @@ export class MEvents extends GLMain {
 
 
                         switch (element._category) {
+                            case GUtils.CATEGORIES.BOX_EDGE:
                             case GUtils.CATEGORIES.STL_LOADED_PART: {
                                 this._pointerConductor.pointer.rotateA(_inter);
                                 break;
                             }
                         }
-                        return this.Utils.Config.onEventPrevent(ev, true);
+                        // return this.Utils.Config.onEventPrevent(ev, true);
                     }
 
 
@@ -619,9 +620,7 @@ export class MEvents extends GLMain {
                     break;
                 }
             }
-
         }
-
     }
 
 
@@ -638,20 +637,22 @@ export class MEvents extends GLMain {
 
 
             if (this.TOOL > 0) {
-                this.main.toggleControls(false);
-                return this.Utils.Config.onEventPrevent(ev, true);
-            }
-
-
-            this._lastSelectedMesh = element;
-            switch (element._category) {
-                case 2: {
-                    this.main.controls.enabled = this.main.dragControls.enabled = false;
-                    this.Utils.Config.onEventPrevent(ev);
-                    element._mousedown(ev);
-                    break;
+                // this.main.toggleControls(false);
+                // return this.Utils.Config.onEventPrevent(ev, true);
+            }else{
+                this._lastSelectedMesh = element;
+                switch (element._category) {
+                    case 2: {
+                        this.main.controls.enabled = this.main.dragControls.enabled = false;
+                        this.Utils.Config.onEventPrevent(ev);
+                        element._mousedown(ev);
+                        break;
+                    }
                 }
             }
+
+
+
         }
     }
 
@@ -668,7 +669,7 @@ export class MEvents extends GLMain {
         let intersectList = this.inter(ev);
         if (intersectList) {
             intersectList = intersectList.filter((el) => {
-                return el.object.isIntersectable
+                return el.object.isIntersectable || this.TOOL !== GUtils.TOOLS.NONE && el.object.category === GUtils.CATEGORIES.BOX_EDGE
             });
             // if (intersectList[0]) {
             //

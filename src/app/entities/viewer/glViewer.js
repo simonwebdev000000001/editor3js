@@ -714,6 +714,54 @@ export class GlViewer {
         // scalebleItems.scale.multiplyScalar( scaleEl);
         gridMiddleHelper.scale.y = scaleEl;
         // console.log(scaleEl)
+
+
+        //add plane edges
+        [
+            {
+                color: new THREE.Color(1, 0, 0),
+                position: new THREE.Vector3(0, GUtils.CHAMPER.HEIGHT / 2, GUtils.CHAMPER.DEPTH / 2),
+                quaternion: (new THREE.Quaternion()).setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.DEPTH, GUtils.CHAMPER.HEIGHT)
+            },
+            {
+                color: new THREE.Color(1, 1, 0),
+                position: new THREE.Vector3(GUtils.CHAMPER.WIDTH, GUtils.CHAMPER.HEIGHT / 2, GUtils.CHAMPER.DEPTH / 2),
+                quaternion: (new THREE.Quaternion()).setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.DEPTH, GUtils.CHAMPER.HEIGHT)
+            },
+            {
+                color: new THREE.Color(0, 1, 0),
+                position: new THREE.Vector3(GUtils.CHAMPER.WIDTH / 2, 0, GUtils.CHAMPER.DEPTH / 2),
+                quaternion: (new THREE.Quaternion()).setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.WIDTH, GUtils.CHAMPER.DEPTH)
+            },
+            {
+                color: new THREE.Color(0, 1, 0),
+                position: new THREE.Vector3(GUtils.CHAMPER.WIDTH / 2, GUtils.CHAMPER.HEIGHT, GUtils.CHAMPER.DEPTH / 2),
+                quaternion: (new THREE.Quaternion()).setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.WIDTH, GUtils.CHAMPER.DEPTH)
+            },
+            {
+                color: new THREE.Color(0, 1, 0),
+                position: new THREE.Vector3(GUtils.CHAMPER.WIDTH / 2, GUtils.CHAMPER.HEIGHT / 2, 0),
+                quaternion: (new THREE.Quaternion()),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.WIDTH, GUtils.CHAMPER.HEIGHT)
+            },
+            {
+                color: new THREE.Color(0, 1, 0),
+                position: new THREE.Vector3(GUtils.CHAMPER.WIDTH / 2, GUtils.CHAMPER.HEIGHT / 2, GUtils.CHAMPER.DEPTH),
+                quaternion: (new THREE.Quaternion()).setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI),
+                geo: new THREE.PlaneBufferGeometry(GUtils.CHAMPER.WIDTH, GUtils.CHAMPER.HEIGHT)
+            }
+        ].forEach((plane) => {
+            let mesh = new THREE.Mesh(plane.geo, new THREE.MeshBasicMaterial({color: plane.color}));
+            mesh.quaternion.copy(plane.quaternion);
+            mesh.position.copy(plane.position);
+            mesh.category = mesh._category = GUtils.CATEGORIES.BOX_EDGE;
+            mesh.material.visible = false;
+            this.scene.helper.add(mesh);
+        })
     }
 
 

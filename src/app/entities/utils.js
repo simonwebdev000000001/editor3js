@@ -14,6 +14,7 @@ export default class GUtils {
     }
     static CATEGORIES = {
         NONE: -1,
+        BOX_EDGE: 13,
         TEMP_TRANSFORM_CONTAINER: 11,
         STL_LOADED_PART: 12
     }
