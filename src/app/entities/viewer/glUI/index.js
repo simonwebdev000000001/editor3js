@@ -17,7 +17,7 @@ export default class GlUi {
             fileContainer.className = "abs uni-glui";
             fileContainer.innerHTML = `
            
-            <form action="" class="" style="background:white">
+            <form action="" class="" style="background:white"  onSubmit="return false;" >
                
                 <label class="btn btn-primary">
                       Import <input type="file" name="myFile"  style="display: none" class="fullWidth" accept=".stl" multiple>
@@ -215,8 +215,9 @@ export default class GlUi {
                 })
             }
             for (let i = 0; i < buttons.length; i++) {
-                buttons[i].addEventListener('click', function (e) {
+                buttons[i].addEventListener('mouseup', function (e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     if(e.target.id =='merge_selected'){
                         parent.mainTransformControls.mergeSelected();
                     }else{

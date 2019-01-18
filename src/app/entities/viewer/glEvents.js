@@ -542,7 +542,7 @@ export class MEvents extends GLMain {
 
         if (this.TOOL > 0) {
             this._pointerConductor.addPoint(this.lastInter, this.TOOL);
-            return;//this.Utils.Config.onEventPrevent(ev, true);
+            return ;//this.Utils.Config.onEventPrevent(ev, true);
         }
         if (this.main.controls.enabled) {
             this.onSelected(ev, (intersects) => {
