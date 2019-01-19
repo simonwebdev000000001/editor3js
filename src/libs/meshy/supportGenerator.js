@@ -60,7 +60,7 @@ var SupportGenerator = (function() {
 
     var boundingBox = new THREE.Box3().setFromObject(this.mesh);
 
-    // axes in the horizontal plane
+      // axes in the horizontal plane
     var ah = cycleAxis(axis);
     var av = cycleAxis(ah);
 

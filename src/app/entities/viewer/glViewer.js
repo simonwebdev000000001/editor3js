@@ -99,12 +99,12 @@ export class GlViewer {
 
     updateMaterials() {
         this.lights.visible = false;
-        let _m = this.model._curMaterial = new THREE.MeshBasicMaterial({side: THREE.BackSide}),
+        let _m = this.model._curMaterial = new THREE.MeshBasicMaterial({/*side: THREE.BackSide*/}),
             _type = parseInt(this.materialType);
 
         this.model._selectedMaterial = new THREE.MeshPhongMaterial({
             color: GUtils.COLORS.SELECTED,
-            side: THREE.BackSide
+            // side: THREE.BackSide
         });
         switch (_type) {
             case 1: {
@@ -113,7 +113,7 @@ export class GlViewer {
             }
             case 3: {
                 this.lights.visible = true;
-                _m = this.model._curMaterial = new THREE.MeshPhongMaterial({side: THREE.BackSide});
+                _m = this.model._curMaterial = new THREE.MeshPhongMaterial({/*side: THREE.BackSide*/});
                 break;
             }
         }
@@ -130,36 +130,7 @@ export class GlViewer {
             const loader = new THREE.STLLoader();
             loader.load(url, (orGeometry) => {
                 if (GUtils.SETTINGS.SHOULD_FILL) this.fillMeshInChamber(orGeometry);
-
-                const model = new ModelPart(this, {orGeometry, name, shouldRecalcCenter: true});
-                self.datGui.editStack.push({
-                    startEditState: {
-                        elements: [model.baseMesh],
-                        apply: function () {
-                            const mesh = this.elements[0];
-                            self._events._onDeletePart(mesh, true);
-                            mesh.updateMatrixWorld();
-                            mesh.updateMatrix();
-                        }
-                    },
-                    endEditState: {
-                        elements: [model.baseMesh],
-                        apply: function () {
-                            const mesh = this.elements[0];
-                            const modelNew = new ModelPart(self, {
-                                fromMesh: mesh,
-                                orGeometry: mesh.geometry,
-                                name: mesh.name
-                            });
-
-
-                            model.viewer.datGui.editStack.refreshHistoryModel(
-                                [mesh, mesh._helper],
-                                [modelNew.baseMesh, modelNew.baseMesh._helper]
-                            );
-                        }
-                    }
-                });
+                this.addModel({orGeometry, name, shouldRecalcCenter: true});
                 //alert("Loaded");
                 self.zoomCamera();
                 resolve();
@@ -173,6 +144,40 @@ export class GlViewer {
             });
         })
 
+    }
+
+    addModel({orGeometry, name, shouldRecalcCenter = false}) {
+        const self = this;
+        const model = new ModelPart(this, {orGeometry, name, shouldRecalcCenter });
+        self.datGui.editStack.push({
+            startEditState: {
+                elements: [model.baseMesh],
+                apply: function () {
+                    const mesh = this.elements[0];
+                    self._events._onDeletePart(mesh, true);
+                    mesh.updateMatrixWorld();
+                    mesh.updateMatrix();
+                }
+            },
+            endEditState: {
+                elements: [model.baseMesh],
+                apply: function () {
+                    const mesh = this.elements[0];
+                    const modelNew = new ModelPart(self, {
+                        fromMesh: mesh,
+                        orGeometry: mesh.geometry,
+                        name: mesh.name
+                    });
+
+
+                    model.viewer.datGui.editStack.refreshHistoryModel(
+                        [mesh, mesh._helper],
+                        [modelNew.baseMesh, modelNew.baseMesh._helper]
+                    );
+                }
+            }
+        });
+        return model;
     }
 
     exportToStl(e) {
@@ -603,7 +608,7 @@ export class GlViewer {
                 geometry = new THREE.TubeBufferGeometry(curve, 10, 1, 10, false),
                 material = new THREE.MeshPhongMaterial({
                     color: el.color,
-                    side: THREE.BackSide
+                    // side: THREE.BackSide
                 }),
                 scale = 0.2,
                 mesh = new THREE.Mesh(geometry, new THREE.LineBasicMaterial({

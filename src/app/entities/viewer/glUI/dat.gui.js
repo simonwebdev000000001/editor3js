@@ -25,7 +25,7 @@ export default class DatGui {
         };
 
         // this.printout = console;//new Printout();
-        this.printout = new Printout(6,viewer.container);
+        this.printout = new Printout(6, viewer.container);
         this.editStack = new EditStack(viewer);
 
         this.buildSupportSliceFolder();
@@ -35,7 +35,7 @@ export default class DatGui {
             .title("Redo the previous undo.");
     }
 
-    generateSupports = function() {
+    generateSupports = function () {
         if (this.model) {
             if (this.supportRadius < this.lineWidth) {
                 this.printout.warn("Support radius is lower than the planar resolution.");
@@ -55,8 +55,8 @@ export default class DatGui {
                 radiusFnK: this.supportRadiusFnK,
                 axis: this.sliceAxis
             });
-        }else{
-            this.printout.warn("Requiree selected model");
+        } else {
+            this.printout.warn("Require selected model");
         }
     }
 
@@ -111,29 +111,29 @@ export default class DatGui {
             .title("Multiplicative constant that modifies the support radius function.");
         folder.add(this, "generateSupports").name("Generate supports")
             .title("Generate the supports.");
-        folder.add(this, "removeSupports").name("Remove supports")
-            .title("Remove generated supports.");
+        // folder.add(this, "removeSupports").name("Remove supports")
+        //     .title("Remove generated supports.");
     }
 
 
-    undo(){
+    undo() {
         try {
             this.editStack.undo();
-        }
-        catch (e) {
-            if(e.message){
+        } catch (e) {
+            if (e.message) {
                 this.editStack.clear();
             }
             this.printout.warn(e);
             console.error(e);
         }
     }
-    redo(){
+
+    redo() {
         try {
             this.editStack.redo();
         }
         catch (e) {
-            if(e.message){
+            if (e.message) {
                 this.editStack.clear();
             }
             this.printout.warn(e);

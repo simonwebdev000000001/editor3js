@@ -3,17 +3,9 @@ export default class SupportTools {
         this.model = modelController;
     }
 
-    removeSupports() {
-        const {model} = this;
-        if (model.supportMesh) {
-            model.supportMesh.parent.remove(model.supportMesh);
-            model.supportMesh = null;
-        }
-    }
 
     generateSupports(params) {
         const {model} = this;
-        this.removeSupports();
         model.baseMesh.updateMatrixWorld();
         model.viewer._events.onTransformModel();
 
@@ -23,7 +15,7 @@ export default class SupportTools {
         this.supportGenerator = new SupportGenerator(simpleMesh, model.getOctree(simpleMesh));
         // }
 
-        const supportMesh = this.makeSupportMesh();
+        // const supportMesh = this.makeSupportMesh();
         const supportGeometry = this.supportGenerator.generate(params);
 
         if (!supportGeometry) return;
@@ -37,16 +29,29 @@ export default class SupportTools {
 
         // model.baseMesh.matrix.decompose(supportMesh.position, supportMesh.rotation, supportMesh.scale);
 
-        supportMesh.geometry = supportGeometry;
-        model.viewer.scene.add(supportMesh);
-        model.supportMesh = supportMesh;
-        this.supportsGenerated = true;
+        supportGeometry.translate(model.baseMesh.position.x,model.baseMesh.position.y,model.baseMesh.position.z);
+
+
+        // supportMesh.geometry = supportGeometry;
+        // model.viewer.scene.add(supportMesh);
+        // model.supportMesh = supportMesh;
+        const addedModel = model.viewer.addModel({
+            orGeometry: new THREE.BufferGeometry().fromGeometry(supportGeometry),
+            name: `${ model.baseMesh.name} supports`,
+            shouldRecalcCenter:true
+        });
+        // model.baseMesh.matrix.decompose(addedModel.baseMesh.position,addedModel.baseMesh.quaternion,addedModel.baseMesh.scale);
+        // model.baseMesh.matrix.decompose(addedModel.baseMesh._helper.position,addedModel.baseMesh._helper.quaternion,addedModel.baseMesh._helper.scale);
+        // addedModel.baseMesh.updateMatrix();
+        // addedModel.baseMesh._helper.updateMatrix();
+        // addedModel.baseMesh._helper.isOnePart = true;
+
     }
 
     makeSupportMesh() {
         const {model} = this;
         // if (!this.supportMesh) {
-        var geo = new THREE.Geometry();
+        const geo = new THREE.Geometry();
         this.supportMesh = new THREE.Mesh(geo, model.materials.base);
         this.supportMesh.name = "support";
 

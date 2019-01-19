@@ -114,7 +114,7 @@ export default class ModelPart extends Model {
         if (fromMesh) {
             fromMesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
             mesh.updateMatrix();
-
+            if (fromMesh._dublicats) mesh._dublicats = fromMesh._dublicats;
         }
 
         mesh._helper = new THREE.BoxHelper(mesh, GUtils.COLORS.YELLOW);
@@ -180,11 +180,15 @@ export default class ModelPart extends Model {
                         let geoCopy = geo.clone();
                         // geoCopy.translate(position.x, position.y, position.z);
                         // geoCopy.translate(position.x, position.y, position.z);
-                        let tempMesh= new THREE.Mesh(new THREE.PlaneBufferGeometry(1,1));
+                        let tempMesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1));
                         tempMesh.position.copy(_position);
                         originMesh.matrix.decompose(new THREE.Vector3(), tempMesh.quaternion, new THREE.Vector3());
                         tempMesh.updateMatrix();
-                        let _model = new ModelPart(viewer, {orGeometry: geoCopy, fromMesh:tempMesh, name: `${mesh.name}(${copies++})`});
+                        let _model = new ModelPart(viewer, {
+                            orGeometry: geoCopy,
+                            fromMesh: tempMesh,
+                            name: `${mesh.name}(${copies++})`
+                        });
                         // _model.mesh.position.copy(_position);
                         originMesh._dublicats.push(_model);
                         // _model.mesh.quaternion.copy(originMesh.quaternion)
@@ -245,8 +249,8 @@ export default class ModelPart extends Model {
                         mesh._onDublicate(settings, true);
 
                         viewer.datGui.editStack.refreshHistoryModel(
-                            [..._dublicats.map((el)=>el.baseMesh), ..._dublicats.map((el) => el.baseMesh._helper)],
-                            [...mesh._dublicats.map((el)=>el.baseMesh), ...mesh._dublicats.map((el) => el.baseMesh._helper)],
+                            [..._dublicats.map((el) => el.baseMesh), ..._dublicats.map((el) => el.baseMesh._helper)],
+                            [...mesh._dublicats.map((el) => el.baseMesh), ...mesh._dublicats.map((el) => el.baseMesh._helper)],
                         );
                     }
                 }
