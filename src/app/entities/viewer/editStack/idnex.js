@@ -26,7 +26,6 @@ export default class EditStack {
                             } else {
                                 list[i].splice(j, 1, newMesh[k]);
                             }
-
                         }
                     }
                 }

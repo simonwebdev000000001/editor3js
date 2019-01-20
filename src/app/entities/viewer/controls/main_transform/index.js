@@ -10,7 +10,7 @@ export default class MainTransformControls {
         if (!transformControls.tempParent) {
             alert('You have to select at least 2 parts to merge into one');
         } else {
-            const mergedParts = transformControls.tempParent.children.filter((el) => el.isIntersectable);
+            const mergedParts = transformControls.tempParent.children.filter((el) => el.isIntersectable && el.geometry.type === 'BufferGeometry');
             if (mergedParts.length < 2) {
                 return alert('You have to select at least 2 parts to merge into one')
             } else {
@@ -29,11 +29,8 @@ export default class MainTransformControls {
             let geo = model.geometry.clone();
 
             geo.name = model.name;
-            geo.scale(model.scale.x, (model.scale.y), model.scale.z);
-            geo.rotateX(model.rotation.x);//, (model.scale.y), model.scale.z);
-            geo.rotateY(model.rotation.y);//, (model.scale.y), model.scale.z);
-            geo.rotateZ(model.rotation.z);//, (model.scale.y), model.scale.z);
-            geo.translate(model.position.x, (model.position.y), model.position.z);
+            model.updateMatrixWorld();
+            geo.applyMatrix(model.matrixWorld);
             geoemtryTomerge.push(geo);
         });
 
@@ -97,12 +94,13 @@ export default class MainTransformControls {
             this.viewer._events._onDeletePart(model, isHistory);
             const curGeo = model.geometry;
 
-            curGeo.scale(model.scale.x, (model.scale.y), model.scale.z);
-            curGeo.rotateX(model.rotation.x);
-            curGeo.rotateY(model.rotation.y);
-            curGeo.rotateZ(model.rotation.z);
-            curGeo.translate(model.position.x, (model.position.y), model.position.z);
-
+            // curGeo.scale(model.scale.x, model.scale.y, model.scale.z);
+            // curGeo.rotateX(model.rotation.x);
+            // curGeo.rotateY(model.rotation.y);
+            // curGeo.rotateZ(model.rotation.z);
+            // curGeo.translate(model.position.x, (model.position.y), model.position.z);
+            model.updateMatrixWorld();
+            curGeo.applyMatrix(model.matrixWorld);
 
             let startFrom = {position: 0, normal: 0};
             model._control.geoemtryTomerge.forEach((orGeo, index) => {

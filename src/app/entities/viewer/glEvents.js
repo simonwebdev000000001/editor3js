@@ -440,7 +440,6 @@ export class MEvents extends GLMain {
         }
         if (object) {
             listOfmodels.push(object);
-
             if (!object._orParent) {
                 object._orParent = object.parent;
                 object._material = object.material;
@@ -460,7 +459,6 @@ export class MEvents extends GLMain {
             transformControls.tempStore.add(transformControls);
             this.main.scene.add(transformControls.tempStore);
             // this.main.scene.add(transformControls);
-
         }
 
         listOfmodels.forEach((el) => {
@@ -486,6 +484,7 @@ export class MEvents extends GLMain {
         if (tempStore.children.length > 1) {
             tempStore.children.forEach((mesh) => {
                 if (mesh._helper) {
+                    mesh._helper.isOnePart = true;
                     while (mesh._helper.children.length) {
                         mesh._helper.remove(mesh._helper.children[0]);
                     }
@@ -513,48 +512,49 @@ export class MEvents extends GLMain {
     }
 
     onMouseUp(ev, acc) {
-        this.main.toggleControls(true);
-        this.main.controls.enabled = this.main.dragControls.enabled = true;
-        document.body.style.cursor = '';
-        if (this._lastSelectedMesh) {
-            switch (this._lastSelectedMesh._category) {
-                case 2: {
-                    this._lastSelectedMesh._mouseup(ev);
-                    break;
+        if (ev.target.id === this.main.gl.domElement.id || ev.target.localName === 'html') {
+            this.main.toggleControls(true);
+            this.main.controls.enabled = this.main.dragControls.enabled = true;
+            document.body.style.cursor = '';
+            if (this._lastSelectedMesh) {
+                switch (this._lastSelectedMesh._category) {
+                    case 2: {
+                        this._lastSelectedMesh._mouseup(ev);
+                        break;
+                    }
                 }
             }
+            // this.Utils.Config.onEventPrevent(ev);
+            this.mouse.down = this.lastSelectedMesh = this._lastSelectedMesh = null;
+            this.canEdit = !this.canEdit;
+            this.main.controls.enabled = true;
+            this.main.refresh();
+
+            if (this.mouse.hasMove) {
+                return
+            }
+            if (this.keyCode.indexOf(16) > -1) {
+
+            } else {
+
+
+            }
+
+            if (this.TOOL > 0) {
+                this._pointerConductor.addPoint(this.lastInter, this.TOOL);
+                return;//this.Utils.Config.onEventPrevent(ev, true);
+            }
+            if (this.main.controls.enabled) {
+                this.onSelected(ev, (intersects) => {
+                    let object;
+                    if (intersects.length) {
+                        object = (intersects[0]).object;
+                        if (object._category != GUtils.CATEGORIES.STL_LOADED_PART) object = null;
+                    }
+                    this.onSelectPart(object);
+                });
+            }
         }
-        // this.Utils.Config.onEventPrevent(ev);
-        this.mouse.down = this.lastSelectedMesh = this._lastSelectedMesh = null;
-        this.canEdit = !this.canEdit;
-        this.main.controls.enabled = true;
-        this.main.refresh();
-
-        if (this.mouse.hasMove) {
-            return
-        }
-        if (this.keyCode.indexOf(16) > -1) {
-
-        } else {
-
-
-        }
-
-        if (this.TOOL > 0) {
-            this._pointerConductor.addPoint(this.lastInter, this.TOOL);
-            return ;//this.Utils.Config.onEventPrevent(ev, true);
-        }
-        if (this.main.controls.enabled) {
-            this.onSelected(ev, (intersects) => {
-                let object;
-                if (intersects.length) {
-                    object = (intersects[0]).object;
-                    if (object._category != GUtils.CATEGORIES.STL_LOADED_PART) object = null;
-                }
-                this.onSelectPart(object);
-            });
-        }
-
 
     }
 
@@ -639,7 +639,7 @@ export class MEvents extends GLMain {
             if (this.TOOL > 0) {
                 // this.main.toggleControls(false);
                 // return this.Utils.Config.onEventPrevent(ev, true);
-            }else{
+            } else {
                 this._lastSelectedMesh = element;
                 switch (element._category) {
                     case 2: {
@@ -652,16 +652,6 @@ export class MEvents extends GLMain {
             }
 
 
-
-        }
-    }
-
-    isLogoSelected(uv, ar) {
-        let decots = ar || this.main.decorations;
-        for (let i = 0, decor = decots; i < decor.length; i++) {
-            if (decor[i].isSelected(uv)) {
-                return decor[i];
-            }
         }
     }
 

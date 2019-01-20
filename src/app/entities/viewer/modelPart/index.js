@@ -150,13 +150,6 @@ export default class ModelPart extends Model {
             tempBox.geometry.computeBoundingBox();
             let {height, width, depth, _helper} = tempMesh._boxSize(),
                 translateMin = _helper.geometry.boundingBox.min.clone().negate();
-
-            // geo.translate(translateMin.x, translateMin.y, translateMin.z);
-            // geo.translate(position.x, position.y, position.z);
-            // geo.translate(distance.x, distance.y, distance.z);
-
-            // translateMin.negate();
-            // geo.translate(translateMin.x, translateMin.y, translateMin.z);
             translateMin.add(position);
             translateMin.add(distance);
             let delta = 0;
@@ -198,30 +191,10 @@ export default class ModelPart extends Model {
                     }
                 }
             }
-            // dim.forEach((dimension) => {
-            //     for (let i = 0; i < copy[dimension]; i++) {
-            //         let geoCopy = geo.clone(), index = i + 1;
-            //         switch (dimension) {
-            //             case dim[0]: {
-            //                 geoCopy.translate(spacing.x * index, 0, 0);
-            //                 break;
-            //             }
-            //             case dim[1]: {
-            //                 geoCopy.translate(0, spacing.y * index, 0);
-            //                 break;
-            //             }
-            //             case dim[2]: {
-            //                 geoCopy.translate(0, 0, spacing.z * index);
-            //                 break;
-            //             }
-            //         }
-            //         new ModelPart(viewer, {orGeometry: geoCopy, name: `${mesh.name}(${copies++})`});
-            //     }
-            // })
 
             if (isHistory) return;
             viewer.datGui.editStack.push({
-                startEditState: {
+                startEditState: {//undo
                     elements: [originMesh],
                     apply: function () {
                         const mesh = this.elements[0];
@@ -241,7 +214,7 @@ export default class ModelPart extends Model {
                         );
                     }
                 },
-                endEditState: {
+                endEditState: {//redo
                     elements: [originMesh],
                     apply: function () {
                         const mesh = this.elements[0];
@@ -249,8 +222,14 @@ export default class ModelPart extends Model {
                         mesh._onDublicate(settings, true);
 
                         viewer.datGui.editStack.refreshHistoryModel(
-                            [..._dublicats.map((el) => el.baseMesh), ..._dublicats.map((el) => el.baseMesh._helper)],
-                            [...mesh._dublicats.map((el) => el.baseMesh), ...mesh._dublicats.map((el) => el.baseMesh._helper)],
+                            [
+                                ..._dublicats.map((el) => el.baseMesh),
+                                ..._dublicats.map((el) => el.baseMesh._helper)
+                            ],
+                            [
+                                ...mesh._dublicats.map((el) => el.baseMesh),
+                                ...mesh._dublicats.map((el) => el.baseMesh._helper)
+                            ],
                         );
                     }
                 }
@@ -266,11 +245,19 @@ export default class ModelPart extends Model {
     }
 
     baseSimpleMesh() {
-        let newMeshGeo = new THREE.Geometry().fromBufferGeometry(this.baseMesh.geometry),
-            mesh = new THREE.Mesh(newMeshGeo, this.baseMesh.material);
-        // this.baseMesh.matrix.decompose(mesh.position, mesh.rotation, mesh.scale);
+        this.baseMesh.updateMatrixWorld();
+        let orGeometry = this.baseMesh.geometry.clone();
+
+        let newMeshGeo = new THREE.Geometry().fromBufferGeometry(orGeometry);
+
+
         newMeshGeo.applyMatrix(this.baseMesh.matrixWorld);
+
+        let mesh = new THREE.Mesh(newMeshGeo, this.baseMesh.material.clone());
+
         mesh.updateMatrix();
+        mesh.updateMatrixWorld();
+
         return mesh;
     }
 
@@ -296,7 +283,8 @@ export default class ModelPart extends Model {
                     mesh.matrix.decompose(modelNew.baseMesh.position, modelNew.baseMesh.quaternion, modelNew.baseMesh.scale);
                     model.viewer.datGui.editStack.refreshHistoryModel(
                         [mesh, mesh._helper],
-                        [modelNew.baseMesh, modelNew.baseMesh._helper]);
+                        [modelNew.baseMesh, modelNew.baseMesh._helper]
+                    );
                 }
             },
             endEditState: {

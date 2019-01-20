@@ -62,12 +62,14 @@ export class GlViewer {
         this.loadedModels = 0;
         _self.materialType = 3;
         _self.updateMaterials();
-        this._ui = new GlUi(_self);
 
 
-        this.datGui = new DatGui(this);
+
+
         this.mainTransformControls = new MainTransformControls(this);
         this._events = new MEvents(this);
+        this._ui = new GlUi(_self);
+        this.datGui = new DatGui(this);
         this.initControls();
         this._animation = new Animation(this);
         this.zoomCamera();
@@ -148,7 +150,7 @@ export class GlViewer {
 
     addModel({orGeometry, name, shouldRecalcCenter = false}) {
         const self = this;
-        const model = new ModelPart(this, {orGeometry, name, shouldRecalcCenter });
+        const model = new ModelPart(this, {orGeometry, name, shouldRecalcCenter});
         self.datGui.editStack.push({
             startEditState: {
                 elements: [model.baseMesh],
@@ -199,7 +201,9 @@ export class GlViewer {
         for (let i = 0; i < listOfMeshes.length; i++) {
             let model = listOfMeshes[i],
                 geo = listOfMeshes[i].geometry.clone();
-            geo.translate(model.position.x, (model.position.y), model.position.z);
+            listOfMeshes[i].updateMatrixWorld();
+            geo.applyMatrix(listOfMeshes[i].matrixWorld);
+            // geo.translate(model.position.x, (model.position.y), model.position.z);
             geoemtryTomerge.push(geo);
         }
 
@@ -257,6 +261,7 @@ export class GlViewer {
         for (let _f in _set) renderer[_f] = _set[_f];
         renderer.setClearColor(GUtils.COLORS.BACKGROUND, 1);
         renderer.domElement.className = 'main-viewer';
+        renderer.domElement.id = `gl-${Date.now()}`;
         //renderer.shadowMap.enabled = true;//!!_set.shadows;
         //renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.sortObjects = false;
@@ -437,10 +442,12 @@ export class GlViewer {
             };
             transformControls.tempParent.children.forEach((mesh) => {
                 mesh.parent.updateMatrixWorld();
-                self.datGui.editStack.startEditState.elements.push({
-                    mesh,
-                    matrix: mesh.matrixWorld.clone()
-                });
+                self.datGui.editStack.startEditState.elements.push(
+                    {
+                        mesh,
+                        matrix: mesh.matrixWorld.clone()
+                    }
+                );
             });
         } else {
             let transform = {
@@ -458,10 +465,12 @@ export class GlViewer {
             };
             transformControls.tempParent.children.forEach((mesh) => {
                 mesh.parent.updateMatrixWorld();
-                transform.endEditState.elements.push({
-                    mesh,
-                    matrix: mesh.matrixWorld.clone()
-                });
+                transform.endEditState.elements.push(
+                    {
+                        mesh,
+                        matrix: mesh.matrixWorld.clone()
+                    }
+                );
             });
 
             self.datGui.editStack.push(transform);

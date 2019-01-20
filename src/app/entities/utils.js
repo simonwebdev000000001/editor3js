@@ -64,9 +64,12 @@ export default class GUtils {
         }
     }
 
-    static onEventPrevent(event, shouldStopPropogation) {
-        event.preventDefault();
-        if (shouldStopPropogation) event.stopPropagation();
+    static onEventPrevent(event, shouldStopPropogation, shouldPrevent=false) {
+        if (!shouldPrevent) event.preventDefault();
+        if (shouldStopPropogation) {
+            event.stopPropagation();
+            // event.stopImmediatePropagation();
+        }
         return false;
     }
 

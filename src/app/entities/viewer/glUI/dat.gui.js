@@ -1,4 +1,5 @@
 import EditStack from '../editStack/idnex';
+import GUtils from "../../utils";
 
 export default class DatGui {
     constructor(viewer) {

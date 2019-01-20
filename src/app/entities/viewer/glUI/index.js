@@ -137,6 +137,23 @@ export default class GlUi {
                 radioButtons = fileContainer.querySelectorAll('input[type="radio"]'),
                 checkboxButtons = fileContainer.querySelectorAll('input[type="checkbox"]'),
                 buttons = fileContainer.querySelectorAll('button');
+
+            fileContainer.addEventListener('mouseup', (e) => {
+                if (e.target.tagName == 'H3' && e.target.parentNode.tagName == 'FIELDSET') {
+                    let _q = e.target.parentNode.querySelector('.fields-list');//fileContainer.querySelector('.fields-list.active');
+                    if (_q) {
+                        if (_q.className.match('active')) {
+                            _q.className = _q.className.replace(' active', '');
+                        } else {
+                            _q.className += ' active';
+                        }
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+
+                }
+            });
             file.addEventListener('change', function (e) {
                 let fileList = e.target.files,
                     haveBigFiles = false;
@@ -158,45 +175,6 @@ export default class GlUi {
                     Modals.ALERT().show({text: 'Certain file(s) have not been rendered as they are too large'});
                 }
 
-                return;
-
-                /*fileReader = new FileReader();;
-               // _self.loadStlFile(_f);
-    
-               
-                fileReader.onload = function (evt) {
-                 //_self.loadStlFile(URL.createObjectURL(new Blob([evt.target.result],{type:_f.type})));
-                 //_self.loadStlFile(URL.createObjectURL(new Blob([new Uint8Array(data)],{type:_f.type})));
-                 };
-               // Load blob as Data URL
-                fileReader.readAsArrayBuffer(_f); */
-
-                /*var chunkSize = 1024 * 1024 * 30; //10MB Chunk size
-                var fileSize = file.size;
-                var currentChunk = 1;
-                var totalChunks = Math.ceil((fileSize / chunkSize), chunkSize);
-     
-    
-                (function loadChunkFile(delta=0) {  
-                    chunkSize +=delta;
-                    offset-=delta;
-                    var offset = (currentChunk - 1) * chunkSize;
-                    var currentFilePart = file.slice(offset, (offset + chunkSize)); 
-                   
-                    _self.loadStlFile(URL.createObjectURL(currentFilePart)).then(() => {
-                        if (currentChunk <=  totalChunks) {
-                            setTimeout(() => {
-                                currentChunk++;
-                                loadChunkFile();
-                            }, 1000)
-                        }
-    
-                    }).catch(()=>{
-                        currentChunk++;
-                        loadChunkFile();
-                       
-                    });
-                })()*/
             });
             for (let i = 0; i < radioButtons.length; i++) {
                 radioButtons[i].addEventListener('change', function (e) {
@@ -218,9 +196,9 @@ export default class GlUi {
                 buttons[i].addEventListener('mouseup', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    if(e.target.id =='merge_selected'){
+                    if (e.target.id == 'merge_selected') {
                         parent.mainTransformControls.mergeSelected();
-                    }else{
+                    } else {
                         parent.exportToStl(e);
                     }
 
@@ -289,7 +267,7 @@ export default class GlUi {
             }
 
 
-            fileContainer.querySelector('#part_list').addEventListener('click', (e) => {
+            fileContainer.querySelector('#part_list').addEventListener('mouseup', (e) => {
                 let {target} = e,
                     {dataset} = target;
                 if (dataset.partDelete) {
@@ -297,34 +275,20 @@ export default class GlUi {
 
                 } else if (dataset.partSelect) {
                     parent._events.onSelectPart(self.getMeshByUUID(dataset.partSelect));
-                }else if (dataset.partSeparate) {
+                } else if (dataset.partSeparate) {
                     parent.mainTransformControls.separateBackModels(self.getMeshByUUID(dataset.partSeparate));
                 } else if (dataset.partCopy) {
                     new DuplicatePart(self.getMeshByUUID(dataset.partCopy))
                 } else if (dataset.partViewThickness) {
                     let mesh = self.getMeshByUUID(dataset.partViewThickness);
                     mesh._control.viewThickness(target.parentNode.parentNode.querySelector('input[name="thickness"]').value);
-                }else if (dataset.partClearThickness) {
+                } else if (dataset.partClearThickness) {
                     let mesh = self.getMeshByUUID(dataset.partClearThickness);
                     mesh._control.clearThicknessView();
                 }
                 return GUtils.onEventPrevent(e);
             })
-            fileContainer.addEventListener('click', (e) => {
-                if (e.target.tagName == 'H3' && e.target.parentNode.tagName == 'FIELDSET') {
-                    let _q = e.target.parentNode.querySelector('.fields-list');//fileContainer.querySelector('.fields-list.active');
-                    if (_q) {
-                        if (_q.className.match('active')) {
-                            _q.className = _q.className.replace(' active', '');
-                        } else {
-                            _q.className += ' active';
-                        }
 
-
-                    }
-
-                }
-            })
         })()
     }
 
@@ -353,11 +317,11 @@ export default class GlUi {
                          <button data-part-copy="${mesh.uuid}">
                             <i class="fa fa-copy fa-lg" data-part-copy="${mesh.uuid}"></i>
                          </button>
-                        ${mesh._control.geoemtryTomerge?(`
+                        ${mesh._control.geoemtryTomerge ? (`
                          <button data-part-separate="${mesh.uuid}">
                             Separate
                          </button>
-                        `):''}
+                        `) : ''}
                      </div>
                  </div>
                 <fieldset id="group1" class="fullWidth">

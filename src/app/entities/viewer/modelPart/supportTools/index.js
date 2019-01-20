@@ -12,7 +12,8 @@ export default class SupportTools {
         // if (!this.supportGenerator) {
         let simpleMesh = model.baseSimpleMesh();
         // model.viewer.scene.add(simpleMesh);
-        this.supportGenerator = new SupportGenerator(simpleMesh, model.getOctree(simpleMesh));
+        // console.log(simpleMesh);
+        this.supportGenerator = new SupportGenerator(simpleMesh, new Octree(simpleMesh));
         // }
 
         // const supportMesh = this.makeSupportMesh();
@@ -23,13 +24,14 @@ export default class SupportTools {
         // support geometry is generated in world space; put it in the base mesh's
         // object space so that they can be transformed with the same matrix
 
-        const inverseMatrix = new THREE.Matrix4().getInverse(model.baseMesh.matrixWorld);
-        supportGeometry.applyMatrix(inverseMatrix);
-
-
-        // model.baseMesh.matrix.decompose(supportMesh.position, supportMesh.rotation, supportMesh.scale);
-
-        supportGeometry.translate(model.baseMesh.position.x,model.baseMesh.position.y,model.baseMesh.position.z);
+        // const inverseMatrix = new THREE.Matrix4().getInverse(model.baseMesh.matrixWorld);
+        // const pst = new THREE.Vector3();
+        // // supportGeometry.applyMatrix(inverseMatrix);
+        // inverseMatrix.decompose(pst, new THREE.Quaternion(), new THREE.Vector3());
+        //
+        // // model.baseMesh.matrix.decompose(supportMesh.position, supportMesh.rotation, supportMesh.scale);
+        // supportGeometry.translate(pst.x, pst.y, pst.z);
+        // supportGeometry.translate(model.baseMesh.position.x, model.baseMesh.position.y, model.baseMesh.position.z);
 
 
         // supportMesh.geometry = supportGeometry;
@@ -38,7 +40,7 @@ export default class SupportTools {
         const addedModel = model.viewer.addModel({
             orGeometry: new THREE.BufferGeometry().fromGeometry(supportGeometry),
             name: `${ model.baseMesh.name} supports`,
-            shouldRecalcCenter:true
+            shouldRecalcCenter: true
         });
         // model.baseMesh.matrix.decompose(addedModel.baseMesh.position,addedModel.baseMesh.quaternion,addedModel.baseMesh.scale);
         // model.baseMesh.matrix.decompose(addedModel.baseMesh._helper.position,addedModel.baseMesh._helper.quaternion,addedModel.baseMesh._helper.scale);
