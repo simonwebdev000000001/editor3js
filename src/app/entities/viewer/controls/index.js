@@ -60,7 +60,7 @@ export default class GLControls {
     editObject() {
     }
 
-    pointerHover = function (intersect) {
+    pointerHover(intersect) {
         this.axis =this._plane.axis = intersect ? intersect.name : null;
         Object.assign(this._plane,this);
         this._plane.updateMatrixWorld();

@@ -67,6 +67,7 @@ export default class EditStack {
 
     // Put a new transform onto the stack.
     push(transform, onTransform) {
+        if(!this.viewer.datGui.history)return console.warn('history is disabled');
         if (this.pos < this.history.length - 1) {
             // effectively deletes all entries after this.pos
             this.history.length = this.pos + 1;

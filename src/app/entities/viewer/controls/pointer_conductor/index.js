@@ -1,7 +1,7 @@
 import GUtils from "../../../utils";
 
 export default class PointerConductor {
-    static SIZE = 22;
+
 
     constructor() {
         let canvas = document.createElement('canvas'),
@@ -55,17 +55,6 @@ export default class PointerConductor {
 
             let quat = pointer.conductor.quaternion.clone();
             pointer.quaternion.slerp(quat, 1)
-            // let tween = new TWEEN.Tween({delta: 0}).to({delta: 1}, 200)
-            // //.easing(TWEEN.Easing.Cubic.InOut)
-            //     .onUpdate(function () {
-            //         pointer.quaternion.slerp(quat, this.delta);
-            //     }).onComplete(() => {
-            //         tween = pointer.tween = null;
-            //     }).onStop(()=> {
-            //         tween = pointer.tween = null;
-            //     })
-            //     .start();
-            // pointer.tween = tween;
         };
     }
 
@@ -124,6 +113,7 @@ export default class PointerConductor {
         }
     }
 }
+PointerConductor.SIZE = 22;
 
 export class Measure {
     constructor() {

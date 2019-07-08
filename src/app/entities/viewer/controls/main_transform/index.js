@@ -54,6 +54,7 @@ export default class MainTransformControls {
                         const mesh = _els[0];
                         const meshEls = _els.splice(1);
                         const newMeshes = self.separateBackModels(mesh, true);
+
                         viewer.datGui.editStack.refreshHistoryModel(
                             [
                                 ...meshEls,
@@ -94,11 +95,6 @@ export default class MainTransformControls {
             this.viewer._events._onDeletePart(model, isHistory);
             const curGeo = model.geometry;
 
-            // curGeo.scale(model.scale.x, model.scale.y, model.scale.z);
-            // curGeo.rotateX(model.rotation.x);
-            // curGeo.rotateY(model.rotation.y);
-            // curGeo.rotateZ(model.rotation.z);
-            // curGeo.translate(model.position.x, (model.position.y), model.position.z);
             model.updateMatrixWorld();
             curGeo.applyMatrix(model.matrixWorld);
 
